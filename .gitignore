@@ -1,0 +1,6 @@
+.ipynb_checkpoints
+
+venv/
+data/
+
+tmp.wav

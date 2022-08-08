@@ -1,0 +1,13 @@
+# IPykernel
+ipykernel
+jupyterlab
+jupyterlab-lsp
+
+# Math related
+numpy
+scipy
+matplotlib
+
+# Sound processing
+soundfile
+pydub
