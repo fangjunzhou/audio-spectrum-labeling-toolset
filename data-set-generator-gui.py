@@ -29,50 +29,80 @@ class App(tk.Frame):
         # =====FRAMES=====
 
         # Top frame for file selection
-        topFrame = tk.Frame(self)
-        topFrame.pack(side=TOP, fill=X)
+        self.topFrame = tk.Frame(self)
+        self.topFrame.pack(side=TOP, fill=X)
 
         # Bottom frame for play control
-        bottomFrame = tk.Frame(self)
-        bottomFrame.pack(side=BOTTOM, fill=X)
+        self.bottomFrame = tk.Frame(self)
+        self.bottomFrame.pack(side=BOTTOM, fill=X)
 
         # Left frame for tools
-        leftFrame = tk.Frame(self)
-        leftFrame.pack(side=LEFT)
+        self.leftFrame = tk.Frame(self)
+        self.leftFrame.pack(side=LEFT)
 
-        # =====TOP FRAME=====
+        self.DrawTopFrame()
 
+        self.DrawMainFrame()
+
+        self.DrawLeftFrame()
+
+        self.DrawBottomFrame()
+
+    def DrawTopFrame(self):
+        """
+        Method to drop the top frame
+        """
         # Create a label and button for file selection
         self.openFileName = tk.StringVar()
         self.openFileName.set("Select a file")
 
-        fileNameLabel = tk.Label(topFrame, textvariable=self.openFileName)
+        fileNameLabel = tk.Label(self.topFrame, textvariable=self.openFileName)
         fileNameLabel.pack(side=tk.LEFT, expand=True)
         selectFileButton = tk.Button(
-            topFrame, text="Select a file", command=self.selectFile)
+            self.topFrame, text="Select a file", command=self.SelectFile)
         selectFileButton.pack(side=tk.LEFT)
 
-        # =====LEFT FRAME=====
+    def DrawMainFrame(self):
+        """
+        Method to draw the main frame
+        """
+        self.canvas = FigureCanvasTkAgg(self.fig, self)
+        self.canvas.draw()
 
-        # =====MAIN FRAME=====
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        canvas = FigureCanvasTkAgg(self.fig, self)
-        canvas.draw()
+    def DrawLeftFrame(self):
+        """
+        Method to draw the left frame
+        """
+        # TODO: Draw left frame
+        pass
 
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    def DrawBottomFrame(self):
+        """
+        Method to draw the bottom frame
+        """
+        playControl = {
+            "play": self.Play,
+            "pause": self.Pause
+        }
+        playControlFrame = tk.Frame(self.bottomFrame)
+        playControlFrame.pack(side=tk.TOP)
+        for key in playControl:
+            playControl[key] = tk.Button(
+                playControlFrame, text=key, command=playControl[key])
+            playControl[key].pack(side=tk.LEFT)
 
-        # =====BOTTOM FRAME=====
-
-        toolbarFrame = tk.Frame(bottomFrame)
+        toolbarFrame = tk.Frame(self.bottomFrame)
         toolbarFrame.pack(side=TOP)
-        toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
+        toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
         toolbar.update()
 
         # Status bar
-        statusBar = tk.Label(bottomFrame, textvariable=self.status)
+        statusBar = tk.Label(self.bottomFrame, textvariable=self.status)
         statusBar.pack(side=BOTTOM, anchor=W)
 
-    def selectFile(self):
+    def SelectFile(self):
         # Get current working directory
         currDir = os.getcwd()
         # Open a file dialog and set the file name in the label
@@ -84,6 +114,18 @@ class App(tk.Frame):
         self.openFileName.set(selectedFileName)
 
         # TODO: Load audio file
+
+    def Play(self):
+        """
+        Play the audio file
+        """
+        pass
+
+    def Pause(self):
+        """
+        Pause the audio file
+        """
+        pass
 
 
 # create the application
