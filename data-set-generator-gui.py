@@ -1,3 +1,4 @@
+import asyncio
 from curses.panel import bottom_panel
 import os
 
@@ -8,6 +9,9 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+from Utils.AudioPlot import AudioMagnitudePlot
+
+from Utils.AudioProcess import Audio
 
 
 class App(tk.Frame):
@@ -17,14 +21,20 @@ class App(tk.Frame):
 
         # =====INITIALIZE=====
 
+        # Main audio object
+        self.mainAudio: Audio = Audio()
+
         # Status text
         self.status = tk.StringVar()
         self.status.set("Status: Ready")
         # Loading status
         self.loadingStatus = False
-
         # Matplotlib figure
-        self.fig, self.ax = plt.subplots()
+        self.magFig, self.magAx = plt.subplots()
+        self.canvas = FigureCanvasTkAgg(self.magFig, self)
+        # Audio plot
+        self.audioMagnitudePlot = AudioMagnitudePlot(
+            self.mainAudio, self.magAx, self.canvas)
 
         # =====FRAMES=====
 
@@ -66,7 +76,6 @@ class App(tk.Frame):
         """
         Method to draw the main frame
         """
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.draw()
 
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -113,7 +122,22 @@ class App(tk.Frame):
                                                       ))
         self.openFileName.set(selectedFileName)
 
-        # TODO: Load audio file
+        # Set the status to loading
+        self.status.set("Status: Loading")
+
+        # Load audio file
+        self.mainAudio.LoadAudio(selectedFileName)
+        # Plot audio file
+        self.audioMagnitudePlot.Plot()
+
+        # Set the status to ready
+        self.status.set("Status: Ready")
+
+    async def SelectFileHelper(self, selectedFileName):
+        """
+        Helper method to select a file
+        """
+        pass
 
     def Play(self):
         """
