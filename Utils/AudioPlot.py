@@ -1,6 +1,7 @@
 
 import math
 import re
+from turtle import pos
 import numpy as np
 from Utils.AudioProcess import Audio
 from matplotlib import pyplot as plt
@@ -36,7 +37,11 @@ class AudioPlot:
         """
         Set the cursor position.
         """
-        self.cursorPosition = position
+        if position < 0:
+            position = 0
+        if position > self.audio.audioLength:
+            position = self.audio.audioLength
+        self.cursorPosition = position / self.audio.audioLength
         self.Plot()
 
 
@@ -83,7 +88,7 @@ class AudioMagnitudePlot(AudioPlot):
         self.ax.set_xlabel("Time (s)")
 
         # Plot the cursor as a vertical line
-        self.ax.axvline(self.cursorPosition, color='r')
+        self.ax.axvline(self.cursorPosition * len(compressedAudioArray), color='r')
 
         # Update the canvas
         self.canvas.draw()
@@ -138,7 +143,7 @@ class AudioSpectrumPlot(AudioPlot):
         self.ax.set_ylabel("Frequency (Hz)")
 
         # Plot the cursor as a vertical line
-        self.ax.axvline(self.cursorPosition, color='r')
+        self.ax.axvline(self.cursorPosition * len(self.audio.fftTimeSpan), color='r')
 
         # Update the canvas
         self.canvas.draw()
