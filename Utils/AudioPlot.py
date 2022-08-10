@@ -1,5 +1,6 @@
 
 import math
+import re
 import numpy as np
 from Utils.AudioProcess import Audio
 from matplotlib import pyplot as plt
@@ -12,6 +13,9 @@ class AudioPlot:
     """
 
     def __init__(self, audio: Audio, ax: plt.Axes, canvas: FigureCanvasTkAgg) -> None:
+        # Constants
+        self.X_TICK_NUMBER = 16
+
         # The audio object currently being plotted
         self.audio: Audio = audio
         # The matplotlib axes object
@@ -57,8 +61,72 @@ class AudioMagnitudePlot(AudioPlot):
         self.ax.cla()
         # Plot the audio array
         self.ax.plot(compressedAudioArray)
+        # Set ticks of the x axis to be the corresponding time position
+        sampleIndeces = np.arange(0, len(compressedAudioArray), len(
+            compressedAudioArray) // self.X_TICK_NUMBER)
+        self.ax.set_xticks(sampleIndeces)
+        tickLabels = [
+            (
+                "{:.2f}".format(self.audio.audioLength *
+                                i / len(compressedAudioArray))
+            ) for i in sampleIndeces]
+        self.ax.set_xticklabels(tickLabels)
+        # Set the x-axis label
+        self.ax.set_xlabel("Time (s)")
+
         # Plot the cursor as a vertical line
         self.ax.axvline(self.cursorPosition, color='r')
 
         # Update the canvas
         self.canvas.draw()
+
+
+class AudioSpectrumPlot(AudioPlot):
+    """
+    Audio spectrum plot.
+    """
+
+    def __init__(self, audio: Audio, ax: plt.Axes, canvas: FigureCanvasTkAgg) -> None:
+        super().__init__(audio, ax, canvas)
+
+        # Settings for the audio spectrum plot
+        self.brightnessEnhancement = 1.0
+
+    def Plot(self) -> None:
+        # Get the audio spectrum
+        audioSpectrum = self.audio.fftSpectrum
+
+        if audioSpectrum is None:
+            return
+
+        # Enhance the brightness of the audio spectrum, add a constant to each element
+        audioSpectrum = audioSpectrum ** self.brightnessEnhancement
+
+        # Clear the axes
+        self.ax.cla()
+        # Plot the audio spectrum
+        self.ax.imshow(audioSpectrum, aspect='auto', origin='lower')
+
+        # Set ticks of the x axis to be the corresponding time position
+        sampleIndeces = np.arange(0, len(self.audio.fftTimeSpan), len(
+            self.audio.fftTimeSpan) // self.X_TICK_NUMBER)
+        self.ax.set_xticks(sampleIndeces)
+        tickLabels = [
+            (
+                "{:.2f}".format(self.audio.audioLength *
+                                i / len(self.audio.fftTimeSpan))
+            ) for i in sampleIndeces]
+        self.ax.set_xticklabels(tickLabels)
+        # Set the x-axis label
+        self.ax.set_xlabel("Time (s)")
+
+        # Plot the cursor as a vertical line
+        self.ax.axvline(self.cursorPosition, color='r')
+
+        # Update the canvas
+        self.canvas.draw()
+
+    def SetBrightnessEnhancement(self, value: float) -> None:
+        self.brightnessEnhancement = value
+
+        self.Plot()
