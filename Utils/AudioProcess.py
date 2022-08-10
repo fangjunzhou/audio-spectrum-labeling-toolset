@@ -1,4 +1,7 @@
-from time import sleep
+import queue
+from re import S
+import threading
+import time
 import scipy
 import soundfile as sf
 import numpy as np
@@ -58,29 +61,42 @@ class AudioPlayer:
         self.audio: Audio = audio
         self.responseRate: float = responseRate
         
+        self.audioBuffer: queue.Queue = queue.Queue()
+        
         # Play control
+        self.playThread = None
+        self.isPlaying: bool = False
+        
         self.timeCallback: callable = callback
         
     def Play(self) -> None:
         """
         Play the audio
         """
-        sd.RawOutputStream(
-            samplerate=self.audio.sampleRate,
-            callback=self.StreamCallback,
-        )
+        self.playThread = threading.Thread(target=self.PlayThread)
+        self.playThread.start()
+    
+    def PlayThread(self) -> None:
+        """
+        Thread target to play the audio
+        """
+        if self.isPlaying:
+            return
+
+        self.isPlaying = True
+        
+        # Update the time callback
+        startTime = time.time()
+        sd.play(self.audio.audioArray, self.audio.sampleRate)
+        while time.time() - startTime < self.audio.audioLength:
+            self.timeCallback(time.time() - startTime)
+            time.sleep(self.responseRate)
+            if not self.isPlaying:
+                return
+        
+        self.isPlaying = False
         
     
     def Pause(self) -> None:
-        sd.stop
-    
-    def StreamCallback(self, outdata, frames, time, status):
-        """
-        Stream callback function
-        """
-        # Update the time
-        # self.timeCallback(time)
-        print(time, status)
-        # Write data to audio stream
-        startFrame = int(time * self.audio.sampleRate)
-        outdata[:] = self.audio.audioArray[startFrame : startFrame + frames]
+        self.isPlaying = False
+        sd.stop()
