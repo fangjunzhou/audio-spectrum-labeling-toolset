@@ -21,8 +21,8 @@ class Audio:
         self.sampleRate: int = None
 
         # FFT array
-        self.fftFreqSample: int = 0
-        self.fftTimeSpan: int = 0
+        self.fftFreqSample: np.ndarray = None
+        self.fftTimeSpan: np.ndarray = 0
         self.fftSpectrum: np.ndarray = None
 
         # Load the audio if audio file path is provided
