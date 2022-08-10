@@ -1,8 +1,6 @@
-import asyncio
 from curses.panel import bottom_panel
 import os
-from turtle import st
-
+import threading
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -10,9 +8,9 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 
-from Utils.AudioProcess import Audio
+from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
+from Utils.AudioProcess import Audio, AudioPlayer
 
 
 class App(tk.Frame):
@@ -24,6 +22,7 @@ class App(tk.Frame):
 
         # Main audio object
         self.mainAudio: Audio = Audio()
+        self.audioPlayer: AudioPlayer = None
 
         # Status text
         self.status = tk.StringVar()
@@ -146,9 +145,10 @@ class App(tk.Frame):
         self.openFileName.set(selectedFileName)
 
         # Run the helper method to load the file
-        asyncio.run(self.SelectFileHelper(selectedFileName))
+        loadFileThread = threading.Thread(target=self.SelectFileHelper, args=(selectedFileName,))
+        loadFileThread.start()
 
-    async def SelectFileHelper(self, selectedFileName):
+    def SelectFileHelper(self, selectedFileName):
         """
         Helper method to select a file
         """
@@ -157,6 +157,13 @@ class App(tk.Frame):
 
         # Load audio file
         self.mainAudio.LoadAudio(selectedFileName)
+        # Set up audio player
+        self.audioPlayer = AudioPlayer(
+            self.mainAudio,
+            1,
+            self.UpdateAudioCursor
+        )
+        
         # Plot audio file
         self.audioMagnitudePlot.Plot()
         self.audioSpectrumPlot.Plot()
@@ -174,15 +181,28 @@ class App(tk.Frame):
         """
         Play the audio file
         """
-        # TODO: Play the audio file
-        pass
+        if self.audioPlayer is None:
+            return
+        
+        # Play the audio file
+        self.audioPlayer.Play()
 
     def Pause(self):
         """
         Pause the audio file
         """
-        # TODO: Pause the audio file
-        pass
+        if self.audioPlayer is None:
+            return
+        
+        # Pause the audio file
+        self.audioPlayer.Pause()
+    
+    def UpdateAudioCursor(self, value):
+        """
+        Method to update the audio cursor
+        """
+        self.audioMagnitudePlot.SetCursorPosition(value)
+        self.audioSpectrumPlot.SetCursorPosition(value)
 
 
 # create the application

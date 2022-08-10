@@ -15,6 +15,7 @@ class AudioPlot:
     def __init__(self, audio: Audio, ax: plt.Axes, canvas: FigureCanvasTkAgg) -> None:
         # Constants
         self.X_TICK_NUMBER = 16
+        self.Y_TICK_NUMBER = 8
 
         # The audio object currently being plotted
         self.audio: Audio = audio
@@ -30,6 +31,13 @@ class AudioPlot:
         Method to plot the audio.
         """
         pass
+
+    def SetCursorPosition(self, position: float) -> None:
+        """
+        Set the cursor position.
+        """
+        self.cursorPosition = position
+        self.Plot()
 
 
 class AudioMagnitudePlot(AudioPlot):
@@ -119,6 +127,15 @@ class AudioSpectrumPlot(AudioPlot):
         self.ax.set_xticklabels(tickLabels)
         # Set the x-axis label
         self.ax.set_xlabel("Time (s)")
+
+        # Set the ticks of the y axis to be the corresponding frequency position
+        sampleIndeces = np.arange(0, len(self.audio.fftFreqSample), len(
+            self.audio.fftFreqSample) // self.Y_TICK_NUMBER)
+        self.ax.set_yticks(sampleIndeces)
+        tickLabels = [
+            self.audio.fftFreqSample[i] for i in sampleIndeces]
+        self.ax.set_yticklabels(tickLabels)
+        self.ax.set_ylabel("Frequency (Hz)")
 
         # Plot the cursor as a vertical line
         self.ax.axvline(self.cursorPosition, color='r')
