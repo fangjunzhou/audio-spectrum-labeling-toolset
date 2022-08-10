@@ -1,6 +1,7 @@
 import asyncio
 from curses.panel import bottom_panel
 import os
+from turtle import st
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -9,7 +10,7 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-from Utils.AudioPlot import AudioMagnitudePlot
+from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 
 from Utils.AudioProcess import Audio
 
@@ -31,10 +32,17 @@ class App(tk.Frame):
         self.loadingStatus = False
         # Matplotlib figure
         self.magFig, self.magAx = plt.subplots()
-        self.canvas = FigureCanvasTkAgg(self.magFig, self)
+        self.magFig.set_figheight(2)
+        self.magFig.tight_layout()
+        self.magCanvas = FigureCanvasTkAgg(self.magFig, self)
+        self.fftFig, self.fftAx = plt.subplots()
+        self.fftCanvas = FigureCanvasTkAgg(self.fftFig, self)
+        self.fftFig.tight_layout()
         # Audio plot
         self.audioMagnitudePlot = AudioMagnitudePlot(
-            self.mainAudio, self.magAx, self.canvas)
+            self.mainAudio, self.magAx, self.magCanvas)
+        self.audioSpectrumPlot = AudioSpectrumPlot(
+            self.mainAudio, self.fftAx, self.fftCanvas)
 
         # =====FRAMES=====
 
@@ -76,16 +84,31 @@ class App(tk.Frame):
         """
         Method to draw the main frame
         """
-        self.canvas.draw()
-
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.magCanvas.draw()
+        self.magCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+        self.fftCanvas.draw()
+        self.fftCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def DrawLeftFrame(self):
         """
         Method to draw the left frame
         """
-        # TODO: Draw left frame
-        pass
+        # Label for Spectrogram
+        spectrogramLabel = tk.Label(
+            self.leftFrame, text="Spectrogram Settings")
+        spectrogramLabel.grid(row=0, column=0)
+
+        # Slider for Spectrogram brightness enhancement
+        brightnessSliderLabel = tk.Label(
+            self.leftFrame, text="Brightness")
+        brightnessSliderLabel.grid(row=1, column=0)
+        brightnessSlider = tk.Scale(
+            self.leftFrame,
+            from_=1, to=.01, resolution=.01,
+            orient=tk.HORIZONTAL,
+            command=self.BrightnessSlider)
+        brightnessSlider.set(1)
+        brightnessSlider.grid(row=1, column=1)
 
     def DrawBottomFrame(self):
         """
@@ -104,7 +127,7 @@ class App(tk.Frame):
 
         toolbarFrame = tk.Frame(self.bottomFrame)
         toolbarFrame.pack(side=TOP)
-        toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
+        toolbar = NavigationToolbar2Tk(self.fftCanvas, toolbarFrame)
         toolbar.update()
 
         # Status bar
@@ -122,6 +145,13 @@ class App(tk.Frame):
                                                       ))
         self.openFileName.set(selectedFileName)
 
+        # Run the helper method to load the file
+        asyncio.run(self.SelectFileHelper(selectedFileName))
+
+    async def SelectFileHelper(self, selectedFileName):
+        """
+        Helper method to select a file
+        """
         # Set the status to loading
         self.status.set("Status: Loading")
 
@@ -129,34 +159,39 @@ class App(tk.Frame):
         self.mainAudio.LoadAudio(selectedFileName)
         # Plot audio file
         self.audioMagnitudePlot.Plot()
+        self.audioSpectrumPlot.Plot()
 
         # Set the status to ready
         self.status.set("Status: Ready")
 
-    async def SelectFileHelper(self, selectedFileName):
+    def BrightnessSlider(self, value):
         """
-        Helper method to select a file
+        Method to handle the brightness slider
         """
-        pass
+        self.audioSpectrumPlot.SetBrightnessEnhancement(float(value))
 
     def Play(self):
         """
         Play the audio file
         """
+        # TODO: Play the audio file
         pass
 
     def Pause(self):
         """
         Pause the audio file
         """
+        # TODO: Pause the audio file
         pass
 
 
 # create the application
 dataSetGenerator = App()
+
 # here are method calls to the window manager class
 dataSetGenerator.master.title("Audio Data Set Generator")
-dataSetGenerator.master.minsize(width=400, height=200)
+dataSetGenerator.master.minsize(width=800, height=400)
+dataSetGenerator.master.geometry("1000x500")
 
 # start the program
 dataSetGenerator.mainloop()
