@@ -249,9 +249,6 @@ class App(tk.Frame):
         print("Audio length (s): " + str(self.mainAudio.audioLength))
         print("Audio length (frame): " + str(len(self.mainAudio.audioArray)))
         print("Audio sample rate: " + str(self.mainAudio.sampleRate))
-        print("Audio fft time steps: " + str(len(self.mainAudio.fftTimeSpan)))
-        print("Audio fft frequency steps: " + str(len(self.mainAudio.fftFreqSample)))
-        print("Audio fft frequency span (Hz): " + f"{self.mainAudio.fftFreqSample[0]:.2f} - {self.mainAudio.fftFreqSample[-1]:.2f}")
         
         # Set up audio player
         self.mainAudioPlayer = AudioPlayer(
@@ -296,8 +293,7 @@ class App(tk.Frame):
             return
         
         # Play the audio file
-        playThread = threading.Thread(target=self.mainAudioPlayer.Play)
-        playThread.start()
+        self.mainAudioPlayer.Play()
 
     def Pause(self):
         """
@@ -341,26 +337,24 @@ class App(tk.Frame):
         
         # Slice the spectrum array
         slicedSpectrum = self.mainAudio.fftSpectrum[ySpan[0]:ySpan[1], xSpan[0]:xSpan[1]]
-        # Get the time span and frequency span
-        slicedTimeSpan = self.mainAudio.fftTimeSpan[xSpan[0]:xSpan[1]]
-        slicedFreqSpan = self.mainAudio.fftFreqSample[ySpan[0]:ySpan[1]]
         
         print("FFT Spectrum Sliced:")
-        print("Time span: " + f"{slicedTimeSpan[0]:.2f} - {slicedTimeSpan[-1]:.2f}")
-        print("Frequency span: " + f"{slicedFreqSpan[0]:.2f} - {slicedFreqSpan[-1]:.2f}")
         
         self.fftDetailViewAx.clear()
         self.fftDetailViewAx.imshow(
             slicedSpectrum,
-            extent=[slicedTimeSpan[0],
-                    slicedTimeSpan[-1],
-                    slicedFreqSpan[0],
-                    slicedFreqSpan[-1]
-                    ],
             aspect='auto',
             origin='lower')
         self.fftDetailViewAx.set_title("FFT Spectrum")
         self.fftDetailCanvas.draw()
+        
+        self.fftDetailAudio.ReconstructAudio(
+            slicedSpectrum,
+            self.mainAudio.fftSpectrum.shape[0],
+            ySpan
+        )
+        
+        self.fftDetailAudioPlayer.Play()
         
         
     def OnClose(self):
