@@ -28,8 +28,6 @@ class Audio:
         self.sampleRate: int = None
 
         # FFT array
-        self.fftFreqSample: np.ndarray = None
-        self.fftTimeSpan: np.ndarray = 0
         self.fftSpectrum: np.ndarray = None
 
         # Load the audio if audio file path is provided
@@ -46,25 +44,29 @@ class Audio:
         self.audioLength = len(self.audioArray) / self.sampleRate
 
         # Generate FFT Spectrum
-        self.fftFreqSample, self.fftTimeSpan, self.fftSpectrum = scipy.signal.spectrogram(
-            self.audioArray,
-            self.sampleRate,
-        )
+        self.fftSpectrum = np.abs(librosa.core.spectrum.stft(self.audioArray))
     
     def ReconstructAudio(
         self,
         fftSpectrum: np.ndarray,
-        fftTimeSpan: np.ndarray,
-        fftFreqSample: np.ndarray
+        freqHeight: int,
+        freqSpan: tuple[int, int],
     ) -> np.ndarray:
         """
         Reconstruct the audio from the FFT spectrum.
         """
-        self.fftSpectrum = fftSpectrum
-        self.fftTimeSpan = fftTimeSpan
-        self.fftFreqSample = fftFreqSample
+        # Check 0 <= freqSpan[0] <= freqSpan[1] <= freqHeight
+        if freqSpan[0] < 0 or freqSpan[1] > freqHeight or freqSpan[0] > freqSpan[1]:
+            raise ValueError("Invalid frequency span")
         
-        # TODO: Reconstruct the audio from the FFT spectrum
+        # Reconstruct the audio from the FFT spectrum
+        # Create a new np array for spectrogram
+        self.fftSpectrum = np.zeros((freqHeight, fftSpectrum.shape[1]))
+        # Store the FFT spectrum
+        self.fftSpectrum[freqSpan[0]:freqSpan[1], :] = fftSpectrum[:, :]
+        
+        # Reconstruct the audio from the FFT spectrum
+        self.audioArray = librosa.core.spectrum.griffinlim(self.fftSpectrum)
         
         return self.audioArray
 
