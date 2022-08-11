@@ -1,6 +1,8 @@
 from curses.panel import bottom_panel
 import os
+from termios import VMIN
 import threading
+from time import sleep
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -44,7 +46,7 @@ class App(tk.Frame):
         self.audioMagnitudePlot = AudioMagnitudePlot(
             self.mainAudio, self.magAx, self.magCanvas)
         self.audioSpectrumPlot = AudioSpectrumPlot(
-            self.mainAudio, self.fftAx, self.fftCanvas)
+            self.mainAudio, self.fftAx, self.fftCanvas, self.SpectrumSelected)
         
         # FFT contrast control
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
@@ -55,6 +57,9 @@ class App(tk.Frame):
         self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
         self.fftDetailViewFig.set_size_inches(4, 3)
         self.fftDetailViewFig.tight_layout()
+        # FFT detail audio
+        self.fftDetailAudio: Audio = Audio()
+        self.fftDetailAudioPlayer: AudioPlayer = AudioPlayer(self.fftDetailAudio, 1)
 
         # =====FRAMES=====
 
@@ -197,8 +202,6 @@ class App(tk.Frame):
         # Add the frame to the canvas
         rightCanvas.create_window((0, 0), window=rightFrameScrollable, anchor=tk.NW)
         
-        
-
     def DrawBottomFrame(self):
         """
         Method to draw the bottom frame
@@ -242,6 +245,14 @@ class App(tk.Frame):
 
         # Load audio file
         self.mainAudio.LoadAudio(selectedFileName)
+        print("Loaded audio file")
+        print("Audio length (s): " + str(self.mainAudio.audioLength))
+        print("Audio length (frame): " + str(len(self.mainAudio.audioArray)))
+        print("Audio sample rate: " + str(self.mainAudio.sampleRate))
+        print("Audio fft time steps: " + str(len(self.mainAudio.fftTimeSpan)))
+        print("Audio fft frequency steps: " + str(len(self.mainAudio.fftFreqSample)))
+        print("Audio fft frequency span (Hz): " + f"{self.mainAudio.fftFreqSample[0]:.2f} - {self.mainAudio.fftFreqSample[-1]:.2f}")
+        
         # Set up audio player
         self.mainAudioPlayer = AudioPlayer(
             self.mainAudio,
@@ -304,6 +315,53 @@ class App(tk.Frame):
         """
         self.audioMagnitudePlot.SetCursorPosition(value)
         self.audioSpectrumPlot.SetCursorPosition(value)
+    
+    def SpectrumSelected(self, startCoord: tuple[float, float], endCoord: tuple[float, float]):
+        """
+        Method to handle the spectrum selected
+        """
+        # Check if the start and end coordinates are valid
+        if startCoord is None or endCoord is None:
+            print("Invalid coordinates")
+            return
+        if startCoord[0] is None or startCoord[1] is None or endCoord[0] is None or endCoord[1] is None:
+            print("Invalid coordinates")
+            return
+        
+        if self.mainAudio is None or self.mainAudio.audioArray is None:
+            return
+        
+        # Construct x coord span
+        xSpan = (int(startCoord[0]), int(endCoord[0]))
+        # Sort the x coord span
+        xSpan = sorted(xSpan)
+        # Construct y coord span
+        ySpan = (int(startCoord[1]), int(endCoord[1]))
+        ySpan = sorted(ySpan)
+        
+        # Slice the spectrum array
+        slicedSpectrum = self.mainAudio.fftSpectrum[ySpan[0]:ySpan[1], xSpan[0]:xSpan[1]]
+        # Get the time span and frequency span
+        slicedTimeSpan = self.mainAudio.fftTimeSpan[xSpan[0]:xSpan[1]]
+        slicedFreqSpan = self.mainAudio.fftFreqSample[ySpan[0]:ySpan[1]]
+        
+        print("FFT Spectrum Sliced:")
+        print("Time span: " + f"{slicedTimeSpan[0]:.2f} - {slicedTimeSpan[-1]:.2f}")
+        print("Frequency span: " + f"{slicedFreqSpan[0]:.2f} - {slicedFreqSpan[-1]:.2f}")
+        
+        self.fftDetailViewAx.clear()
+        self.fftDetailViewAx.imshow(
+            slicedSpectrum,
+            extent=[slicedTimeSpan[0],
+                    slicedTimeSpan[-1],
+                    slicedFreqSpan[0],
+                    slicedFreqSpan[-1]
+                    ],
+            aspect='auto',
+            origin='lower')
+        self.fftDetailViewAx.set_title("FFT Spectrum")
+        self.fftDetailCanvas.draw()
+        
         
     def OnClose(self):
         """
