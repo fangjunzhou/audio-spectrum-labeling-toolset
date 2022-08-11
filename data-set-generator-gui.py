@@ -63,12 +63,18 @@ class App(tk.Frame):
         # Left frame for tools
         self.leftFrame = tk.Frame(self)
         self.leftFrame.pack(side=LEFT, fill=Y)
+        
+        # Right frame for FFT Inspector
+        self.rightFrame = tk.Frame(self)
+        self.rightFrame.pack(side=RIGHT, fill=Y)
 
         self.DrawTopFrame()
 
         self.DrawMainFrame()
 
         self.DrawLeftFrame()
+        
+        self.DrawRightFrame()
 
         self.DrawBottomFrame()
 
@@ -99,40 +105,66 @@ class App(tk.Frame):
         """
         Method to draw the left frame
         """
-        # Spectrum Frame
-        spectrumFrame = tk.Frame(self.leftFrame)
-        spectrumFrame.pack(side=TOP, fill=tk.BOTH)
+        
+        # Create canvas for spectrum frame
+        leftCanvas = Canvas(self.leftFrame)
+        leftCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add a scrollbar to the canvas
+        leftCanvasScrollbar = ttk.Scrollbar(self.leftFrame, orient=tk.VERTICAL, command=leftCanvas.yview)
+        leftCanvasScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Configure the canvas
+        leftCanvas.configure(yscrollcommand=leftCanvasScrollbar.set)
+        leftCanvas.bind(
+            '<Configure>',
+            lambda e: leftCanvas.configure(
+                scrollregion=leftCanvas.bbox('all')
+            )
+        )
+        
+        # Create scrollable frame for canvas
+        leftFrameScrollable = tk.Frame(leftCanvas)
+        # Add the frame to the canvas
+        leftCanvas.create_window((0, 0), window=leftFrameScrollable, anchor=tk.NW)
         
         # Label for Spectrogram
         spectrogramLabel = tk.Label(
-            spectrumFrame, text="Spectrogram Settings")
+            leftFrameScrollable, text="Spectrogram Settings")
         spectrogramLabel.grid(row=0, column=0)
 
         # Slider for Spectrogram brightness enhancement
         brightnessSliderLabel = tk.Label(
-            spectrumFrame, text="Brightness")
+            leftFrameScrollable, text="Brightness")
         brightnessSliderLabel.grid(row=1, column=0)
         brightnessSlider = tk.Scale(
-            spectrumFrame,
+            leftFrameScrollable,
             from_=0, to=1, resolution=.001,
             orient=tk.HORIZONTAL,
             command=self.BrightnessSlider)
         brightnessSlider.set(0)
         brightnessSlider.grid(row=1, column=1)
         
+        # Slider for Spectrogram contrast enhancement
         contrastSliderLabel = tk.Label(
-            spectrumFrame, text="Contrast")
+            leftFrameScrollable, text="Contrast")
         contrastSliderLabel.grid(row=2, column=0)
-        self.fttContrastCurveCanvas = FigureCanvasTkAgg(self.fttContrastCurveFig, spectrumFrame)
-        self.fttContrastCurveCanvas.draw()
-        self.fttContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
         contrastSlider = tk.Scale(
-            spectrumFrame,
+            leftFrameScrollable,
             from_=1, to=32, resolution=.01,
             orient=tk.HORIZONTAL,
             command=self.ContrastSlider)
         contrastSlider.set(1)
-        contrastSlider.grid(row=4, column=0, columnspan=2)
+        contrastSlider.grid(row=2, column=1)
+        self.fttContrastCurveCanvas = FigureCanvasTkAgg(self.fttContrastCurveFig, leftFrameScrollable)
+        self.ContrastSlider(1)
+        self.fttContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
+    
+    def DrawRightFrame(self):
+        """
+        Method to draw the right frame.
+        """
+        pass
 
     def DrawBottomFrame(self):
         """
@@ -207,6 +239,7 @@ class App(tk.Frame):
             np.linspace(0, 1, 1000),
             1 - np.power(1 - np.linspace(0, 1, 1000), float(value))
         )
+        self.fttContrastCurveAx.set_title("Contrast Curve")
         self.fttContrastCurveCanvas.draw()
         
         self.audioSpectrumPlot.SetContrastEnhancement(float(value))
