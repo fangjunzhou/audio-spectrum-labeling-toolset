@@ -25,7 +25,7 @@ class App(tk.Frame):
 
         # Main audio object
         self.mainAudio: Audio = Audio()
-        self.audioPlayer: AudioPlayer = None
+        self.mainAudioPlayer: AudioPlayer = None
 
         # Status text
         self.status = tk.StringVar()
@@ -46,9 +46,15 @@ class App(tk.Frame):
         self.audioSpectrumPlot = AudioSpectrumPlot(
             self.mainAudio, self.fftAx, self.fftCanvas)
         
-        self.fttContrastCurveFig, self.fttContrastCurveAx = plt.subplots()
-        self.fttContrastCurveFig.set_size_inches(2, 2)
-        self.fttContrastCurveFig.tight_layout()
+        # FFT contrast control
+        self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
+        self.fftContrastCurveFig.set_size_inches(2, 2)
+        self.fftContrastCurveFig.tight_layout()
+        
+        # FFT detail view
+        self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
+        self.fftDetailViewFig.set_size_inches(4, 3)
+        self.fftDetailViewFig.tight_layout()
 
         # =====FRAMES=====
 
@@ -156,15 +162,42 @@ class App(tk.Frame):
             command=self.ContrastSlider)
         contrastSlider.set(1)
         contrastSlider.grid(row=2, column=1)
-        self.fttContrastCurveCanvas = FigureCanvasTkAgg(self.fttContrastCurveFig, leftFrameScrollable)
+        self.fftContrastCurveCanvas = FigureCanvasTkAgg(self.fftContrastCurveFig, leftFrameScrollable)
         self.ContrastSlider(1)
-        self.fttContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
+        self.fftContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
     
     def DrawRightFrame(self):
         """
         Method to draw the right frame.
         """
-        pass
+        # Pack the fft detail canvas
+        self.fftDetailCanvas = FigureCanvasTkAgg(self.fftDetailViewFig, self.rightFrame)
+        self.fftDetailCanvas.draw()
+        self.fftDetailCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+        
+        # Create canvas for spectrum frame
+        rightCanvas = Canvas(self.rightFrame)
+        rightCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add a scrollbar to the canvas
+        rightCanvasScrollbar = ttk.Scrollbar(self.rightFrame, orient=tk.VERTICAL, command=rightCanvas.yview)
+        rightCanvasScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Configure the canvas
+        rightCanvas.configure(yscrollcommand=rightCanvasScrollbar.set)
+        rightCanvas.bind(
+            '<Configure>',
+            lambda e: rightCanvas.configure(
+                scrollregion=rightCanvas.bbox('all')
+            )
+        )
+        
+        # Create scrollable frame for canvas
+        rightFrameScrollable = tk.Frame(rightCanvas)
+        # Add the frame to the canvas
+        rightCanvas.create_window((0, 0), window=rightFrameScrollable, anchor=tk.NW)
+        
+        
 
     def DrawBottomFrame(self):
         """
@@ -210,7 +243,7 @@ class App(tk.Frame):
         # Load audio file
         self.mainAudio.LoadAudio(selectedFileName)
         # Set up audio player
-        self.audioPlayer = AudioPlayer(
+        self.mainAudioPlayer = AudioPlayer(
             self.mainAudio,
             0.2,
             self.UpdateAudioCursor
@@ -234,13 +267,13 @@ class App(tk.Frame):
         Method to handle the contrast slider
         """
         # Plot f(x) = 1 - (1-x)^(contrast)
-        self.fttContrastCurveAx.clear()
-        self.fttContrastCurveAx.plot(
+        self.fftContrastCurveAx.clear()
+        self.fftContrastCurveAx.plot(
             np.linspace(0, 1, 1000),
             1 - np.power(1 - np.linspace(0, 1, 1000), float(value))
         )
-        self.fttContrastCurveAx.set_title("Contrast Curve")
-        self.fttContrastCurveCanvas.draw()
+        self.fftContrastCurveAx.set_title("Contrast Curve")
+        self.fftContrastCurveCanvas.draw()
         
         self.audioSpectrumPlot.SetContrastEnhancement(float(value))
 
@@ -248,22 +281,22 @@ class App(tk.Frame):
         """
         Play the audio file
         """
-        if self.audioPlayer is None:
+        if self.mainAudioPlayer is None:
             return
         
         # Play the audio file
-        playThread = threading.Thread(target=self.audioPlayer.Play)
+        playThread = threading.Thread(target=self.mainAudioPlayer.Play)
         playThread.start()
 
     def Pause(self):
         """
         Pause the audio file
         """
-        if self.audioPlayer is None:
+        if self.mainAudioPlayer is None:
             return
         
         # Pause the audio file
-        self.audioPlayer.Pause()
+        self.mainAudioPlayer.Pause()
     
     def UpdateAudioCursor(self, value):
         """
@@ -291,8 +324,8 @@ dataSetGenerator = App()
 
 # here are method calls to the window manager class
 dataSetGenerator.master.title("Audio Data Set Generator")
-dataSetGenerator.master.minsize(width=800, height=400)
-dataSetGenerator.master.geometry("1000x500")
+dataSetGenerator.master.minsize(width=1200, height=600)
+dataSetGenerator.master.geometry("1200x600")
 
 # start the program
 dataSetGenerator.mainloop()
