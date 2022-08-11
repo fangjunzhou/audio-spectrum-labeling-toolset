@@ -7,6 +7,7 @@ jupyterlab-lsp
 numpy
 scipy
 matplotlib
+librosa
 
 # Sound processing
 soundfile
