@@ -21,8 +21,8 @@ class AudioPlot:
                  onRelease: callable = None,
     ) -> None:
         # Constants
-        self.X_TICK_NUMBER = 16
-        self.Y_TICK_NUMBER = 8
+        self.X_TICK_NUMBER = 10
+        self.Y_TICK_NUMBER = 5
 
         # The audio object currently being plotted
         self.audio: Audio = audio
@@ -174,6 +174,28 @@ class AudioSpectrumPlot(AudioPlot):
         self.ax.cla()
         # Plot the audio spectrum
         self.ax.imshow(audioSpectrum, aspect='auto', origin='lower', vmin=0, vmax=1)
+        
+        # Set x axis ticks to be the corresponding time
+        self.ax.set_xticks(np.arange(0, audioSpectrum.shape[1], audioSpectrum.shape[1] // self.X_TICK_NUMBER))
+        self.ax.set_xticklabels(
+            [
+                "{:.2f}".format(self.audio.audioLength * i / audioSpectrum.shape[1]) 
+                for i in np.arange(
+                    0,
+                    audioSpectrum.shape[1],
+                    audioSpectrum.shape[1] // self.X_TICK_NUMBER
+                )
+             ]
+        )
+        
+        # Get frequency array
+        freqArr = librosa.fft_frequencies(sr=self.audio.sampleRate)
+        self.ax.set_yticks(np.arange(0, len(freqArr), len(freqArr) // self.Y_TICK_NUMBER))
+        self.ax.set_yticklabels(
+            [
+                "{:.2f}".format(freq) for freq in freqArr[::len(freqArr) // self.Y_TICK_NUMBER]
+            ]
+        )
 
         # Plot the cursor as a vertical line
         self.ax.axvline(self.cursorPosition * self.audio.fftSpectrum.shape[1], color='r')
