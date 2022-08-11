@@ -32,7 +32,7 @@ class FFTDetailInspector(tk.Frame):
     """
     Inspector to browse FFT Detials.
     """
-    def __init__(self, rightFrame,  master = None) -> None:
+    def __init__(self, master = None) -> None:
         super().__init__(master)
         
         # FFT detail view
@@ -44,16 +44,16 @@ class FFTDetailInspector(tk.Frame):
         self.fftDetailAudioPlayer: AudioPlayer = AudioPlayer(self.fftDetailAudio, 1)
         
         # Pack the fft detail canvas
-        self.fftDetailCanvas = FigureCanvasTkAgg(self.fftDetailViewFig, rightFrame)
+        self.fftDetailCanvas = FigureCanvasTkAgg(self.fftDetailViewFig, master)
         self.fftDetailCanvas.draw()
         self.fftDetailCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
         
         # Create canvas for spectrum frame
-        rightCanvas = Canvas(rightFrame)
+        rightCanvas = Canvas(master)
         rightCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # Add a scrollbar to the canvas
-        rightCanvasScrollbar = ttk.Scrollbar(rightFrame, orient=tk.VERTICAL, command=rightCanvas.yview)
+        rightCanvasScrollbar = ttk.Scrollbar(master, orient=tk.VERTICAL, command=rightCanvas.yview)
         rightCanvasScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Configure the canvas

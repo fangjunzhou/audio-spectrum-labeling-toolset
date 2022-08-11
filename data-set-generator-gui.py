@@ -16,6 +16,7 @@ import numpy as np
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
+from Utils.DataSetLabelInspector import DataSetLabelGroup, DataSetLabelsInspector
 from Utils.FFTInspector import FFTDetailInspector
 
 class App(tk.Frame):
@@ -53,6 +54,9 @@ class App(tk.Frame):
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
         self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
+        
+        # Data set groups
+        self.dataSetGroups: list[DataSetLabelGroup] = []
         
 
         # =====FRAMES=====
@@ -110,40 +114,21 @@ class App(tk.Frame):
         """
         Method to draw the left frame
         """
-        
-        # Create canvas for spectrum frame
-        leftCanvas = Canvas(self.leftFrame)
-        leftCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Add a scrollbar to the canvas
-        leftCanvasScrollbar = ttk.Scrollbar(self.leftFrame, orient=tk.VERTICAL, command=leftCanvas.yview)
-        leftCanvasScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Configure the canvas
-        leftCanvas.configure(yscrollcommand=leftCanvasScrollbar.set)
-        leftCanvas.bind(
-            '<Configure>',
-            lambda e: leftCanvas.configure(
-                scrollregion=leftCanvas.bbox('all')
-            )
-        )
-        
-        # Create scrollable frame for canvas
-        leftFrameScrollable = tk.Frame(leftCanvas)
-        # Add the frame to the canvas
-        leftCanvas.create_window((0, 0), window=leftFrameScrollable, anchor=tk.NW)
+        # Frame for spectrogram controls
+        spectrogramControlFrame = tk.Frame(self.leftFrame)
+        spectrogramControlFrame.pack(side=tk.TOP, fill=tk.X, expand=False)
         
         # Label for Spectrogram
         spectrogramLabel = ttk.Label(
-            leftFrameScrollable, text="Spectrogram Settings")
+            spectrogramControlFrame, text="Spectrogram Settings")
         spectrogramLabel.grid(row=0, column=0)
 
         # Slider for Spectrogram brightness enhancement
         brightnessSliderLabel = ttk.Label(
-            leftFrameScrollable, text="Brightness")
+            spectrogramControlFrame, text="Brightness")
         brightnessSliderLabel.grid(row=1, column=0)
         brightnessSlider = ttk.Scale(
-            leftFrameScrollable,
+            spectrogramControlFrame,
             from_=0, to=1,
             orient=tk.HORIZONTAL,
             command=self.BrightnessSlider)
@@ -151,12 +136,12 @@ class App(tk.Frame):
         brightnessSlider.grid(row=1, column=1)
         
         # Slider for Spectrogram contrast enhancement
-        self.fftContrastCurveCanvas = FigureCanvasTkAgg(self.fftContrastCurveFig, leftFrameScrollable)
+        self.fftContrastCurveCanvas = FigureCanvasTkAgg(self.fftContrastCurveFig, spectrogramControlFrame)
         contrastSliderLabel = ttk.Label(
-            leftFrameScrollable, text="Contrast")
+            spectrogramControlFrame, text="Contrast")
         contrastSliderLabel.grid(row=2, column=0)
         contrastSlider = ttk.Scale(
-            leftFrameScrollable,
+            spectrogramControlFrame,
             from_=1, to=32,
             orient=tk.HORIZONTAL,
             command=self.ContrastSlider)
@@ -164,6 +149,13 @@ class App(tk.Frame):
         contrastSlider.grid(row=2, column=1)
         self.ContrastSlider(1)
         self.fftContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
+        
+        # Data set label groups
+        self.dataSetLabelInspector = DataSetLabelsInspector(
+            self.dataSetGroups,
+            master=self.leftFrame
+        )
+        self.dataSetLabelInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     
     def DrawRightFrame(self):
         """
@@ -171,7 +163,6 @@ class App(tk.Frame):
         """
         
         self.fftInspector = FFTDetailInspector(
-            self.rightFrame,
             master=self.rightFrame
         )
         self.fftInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -215,6 +206,11 @@ class App(tk.Frame):
         """
         Helper method to select a file
         """
+        # Check selected file name is not empty
+        if selectedFileName == "":
+            print("No file selected")
+            return
+        
         # Set the status to loading
         self.status.set("Status: Loading")
 
