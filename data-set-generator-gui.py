@@ -50,7 +50,7 @@ class App(tk.Frame):
         
         # FFT contrast control
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
-        self.fftContrastCurveFig.set_size_inches(2, 2)
+        self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
         
         # FFT detail view
