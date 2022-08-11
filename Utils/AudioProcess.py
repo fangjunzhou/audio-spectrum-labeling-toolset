@@ -1,7 +1,8 @@
+from curses import window
 import queue
-from re import S
 import threading
 import time
+import librosa
 import scipy
 import soundfile as sf
 import numpy as np
@@ -46,7 +47,26 @@ class Audio:
 
         # Generate FFT Spectrum
         self.fftFreqSample, self.fftTimeSpan, self.fftSpectrum = scipy.signal.spectrogram(
-            self.audioArray, self.sampleRate)
+            self.audioArray,
+            self.sampleRate,
+        )
+    
+    def ReconstructAudio(
+        self,
+        fftSpectrum: np.ndarray,
+        fftTimeSpan: np.ndarray,
+        fftFreqSample: np.ndarray
+    ) -> np.ndarray:
+        """
+        Reconstruct the audio from the FFT spectrum.
+        """
+        self.fftSpectrum = fftSpectrum
+        self.fftTimeSpan = fftTimeSpan
+        self.fftFreqSample = fftFreqSample
+        
+        # TODO: Reconstruct the audio from the FFT spectrum
+        
+        return self.audioArray
 
 class AudioPlayer:
     """
@@ -56,7 +76,7 @@ class AudioPlayer:
         self,
         audio: Audio,
         responseRate: float,
-        callback: callable,
+        callback: callable = None,
     ) -> None:
         self.audio: Audio = audio
         self.responseRate: float = responseRate
@@ -89,14 +109,14 @@ class AudioPlayer:
         startTime = time.time()
         sd.play(self.audio.audioArray, self.audio.sampleRate)
         while time.time() - startTime < self.audio.audioLength:
-            self.timeCallback(time.time() - startTime)
+            if self.timeCallback is not None:
+                self.timeCallback(time.time() - startTime)
             time.sleep(self.responseRate)
             if not self.isPlaying:
                 return
         
         self.isPlaying = False
         
-    
     def Pause(self) -> None:
         self.isPlaying = False
         sd.stop()
