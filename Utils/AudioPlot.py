@@ -151,7 +151,7 @@ class AudioSpectrumPlot(AudioPlot):
         self.contrastEnhancement = 1.0
         
         # Plot cursor
-        self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
+        self.cursor = Cursor(self.ax, useblit=True, color='white', linewidth=1)
 
     def Plot(self) -> None:
         # Get the audio spectrum

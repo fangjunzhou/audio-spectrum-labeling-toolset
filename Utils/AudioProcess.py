@@ -102,7 +102,7 @@ class AudioPlayer:
         """
         Thread target to play the audio
         """
-        if self.isPlaying:
+        if self.isPlaying or self.audio.audioArray is None:
             return
 
         self.isPlaying = True

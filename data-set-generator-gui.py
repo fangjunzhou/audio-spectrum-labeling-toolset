@@ -16,66 +16,7 @@ import numpy as np
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
-
-class LabeledEntry:
-    """
-    Labeled entry.
-    """
-    
-    def __init__(self, parentFrame: ttk.Frame, row: int, label: str, initVal: str = "") -> None:
-        label = ttk.Label(parentFrame, text = label)
-        label.grid(row=row, column=0)
-        self.textContent = tk.Text(parentFrame, state="disabled", height=1, width=40)
-        self.textContent.configure(state="normal")
-        self.textContent.insert(tk.END, initVal)
-        self.textContent.configure(state="disabled")
-        self.textContent.grid(row=row, column=1)
-    
-    def SetText(self, text: str) -> None:
-        self.textContent.configure(state="normal")
-        self.textContent.delete(1.0, tk.END)
-        self.textContent.insert(tk.END, text)
-        self.textContent.configure(state="disabled")
-        
-
-class FFTDetailInspector(tk.Frame):
-    """
-    Inspector to browse FFT Detials.
-    """
-    def __init__(self, master = None):
-        super().__init__(master)
-        
-        title = ttk.Label(self, text = "FFT Detail Inspector")
-        title.pack(side=TOP)
-        
-        basicInfoFrame = ttk.Frame(self)
-        basicInfoFrame.pack(side=TOP, fill=X)
-        
-        self.startTime = LabeledEntry(
-            basicInfoFrame,
-            0,
-            "Start Time",
-            initVal="0.0"
-        )
-        self.endTime = LabeledEntry(
-            basicInfoFrame,
-            1,
-            "End Time",
-            initVal="0.0"
-        )
-        self.startFreq = LabeledEntry(
-            basicInfoFrame,
-            2,
-            "Start Freq",
-            initVal = "0.0"
-        )
-        self.endFreq = LabeledEntry(
-            basicInfoFrame,
-            3,
-            "End Freq",
-            initVal = "0.0"
-        )
-
+from Utils.FFTInspector import FFTDetailInspector
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -113,13 +54,6 @@ class App(tk.Frame):
         self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
         
-        # FFT detail view
-        self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
-        self.fftDetailViewFig.set_size_inches(4, 3)
-        self.fftDetailViewFig.tight_layout()
-        # FFT detail audio
-        self.fftDetailAudio: Audio = Audio()
-        self.fftDetailAudioPlayer: AudioPlayer = AudioPlayer(self.fftDetailAudio, 1)
 
         # =====FRAMES=====
 
@@ -235,36 +169,12 @@ class App(tk.Frame):
         """
         Method to draw the right frame.
         """
-        # Pack the fft detail canvas
-        self.fftDetailCanvas = FigureCanvasTkAgg(self.fftDetailViewFig, self.rightFrame)
-        self.fftDetailCanvas.draw()
-        self.fftDetailCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
         
-        # Create canvas for spectrum frame
-        rightCanvas = Canvas(self.rightFrame)
-        rightCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Add a scrollbar to the canvas
-        rightCanvasScrollbar = ttk.Scrollbar(self.rightFrame, orient=tk.VERTICAL, command=rightCanvas.yview)
-        rightCanvasScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Configure the canvas
-        rightCanvas.configure(yscrollcommand=rightCanvasScrollbar.set)
-        rightCanvas.bind(
-            '<Configure>',
-            lambda e: rightCanvas.configure(
-                scrollregion=rightCanvas.bbox('all')
-            )
+        self.fftInspector = FFTDetailInspector(
+            self.rightFrame,
+            master=self.rightFrame
         )
-        
-        # Create scrollable frame for canvas
-        rightFrameScrollable = tk.Frame(rightCanvas)
-        # Add the frame to the canvas
-        rightCanvas.create_window((0, 0), window=rightFrameScrollable, anchor=tk.NW)
-        
-        self.fftInspector = FFTDetailInspector(rightFrameScrollable)
         self.fftInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        
         
     def DrawBottomFrame(self):
         """
@@ -284,6 +194,7 @@ class App(tk.Frame):
         # Status bar
         statusBar = ttk.Label(self.bottomFrame, textvariable=self.status)
         statusBar.pack(side=BOTTOM, anchor=W)
+
 
     def SelectFile(self):
         # Get current working directory
@@ -403,12 +314,12 @@ class App(tk.Frame):
         slicedSpectrum = self.mainAudio.fftSpectrum[ySpan[0]:ySpan[1], xSpan[0]:xSpan[1]]
         
         # Update FFT Detail Inspector
-        self.fftDetailViewAx.clear()
-        self.fftDetailViewAx.imshow(
+        self.fftInspector.fftDetailViewAx.clear()
+        self.fftInspector.fftDetailViewAx.imshow(
             slicedSpectrum,
             aspect='auto',
             origin='lower')
-        self.fftDetailCanvas.draw()
+        self.fftInspector.fftDetailCanvas.draw()
         
         self.fftInspector.startTime.SetText(str(xSpan[0] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
         self.fftInspector.endTime.SetText(str(xSpan[1] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
@@ -416,13 +327,13 @@ class App(tk.Frame):
         self.fftInspector.startFreq.SetText(str(freqArr[int(ySpan[0])]))
         self.fftInspector.endFreq.SetText(str(freqArr[(ySpan[1])]))
         
-        self.fftDetailAudio.ReconstructAudio(
+        self.fftInspector.fftDetailAudio.ReconstructAudio(
             slicedSpectrum,
             self.mainAudio.fftSpectrum.shape[0],
             ySpan
         )
         
-        self.fftDetailAudioPlayer.Play()
+        self.fftInspector.fftDetailAudioPlayer.Play()
             
     def OnClose(self):
         """
@@ -436,7 +347,6 @@ class App(tk.Frame):
         self.quit()
         self.destroy()
         exit()
-
 
 # create the application
 dataSetGenerator = App()
