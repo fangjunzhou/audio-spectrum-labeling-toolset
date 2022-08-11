@@ -1,8 +1,9 @@
 from curses.panel import bottom_panel
 import os
-from termios import VMIN
+import librosa
 import threading
-from time import sleep
+from time import sleep, time
+from timeit import timeit
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
@@ -15,6 +16,65 @@ import numpy as np
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
+
+class LabeledEntry:
+    """
+    Labeled entry.
+    """
+    
+    def __init__(self, parentFrame: ttk.Frame, row: int, label: str, initVal: str = "") -> None:
+        label = ttk.Label(parentFrame, text = label)
+        label.grid(row=row, column=0)
+        self.textContent = tk.Text(parentFrame, state="disabled", height=1, width=40)
+        self.textContent.configure(state="normal")
+        self.textContent.insert(tk.END, initVal)
+        self.textContent.configure(state="disabled")
+        self.textContent.grid(row=row, column=1)
+    
+    def SetText(self, text: str) -> None:
+        self.textContent.configure(state="normal")
+        self.textContent.delete(1.0, tk.END)
+        self.textContent.insert(tk.END, text)
+        self.textContent.configure(state="disabled")
+        
+
+class FFTDetailInspector(tk.Frame):
+    """
+    Inspector to browse FFT Detials.
+    """
+    def __init__(self, master = None):
+        super().__init__(master)
+        
+        title = ttk.Label(self, text = "FFT Detail Inspector")
+        title.pack(side=TOP)
+        
+        basicInfoFrame = ttk.Frame(self)
+        basicInfoFrame.pack(side=TOP, fill=X)
+        
+        self.startTime = LabeledEntry(
+            basicInfoFrame,
+            0,
+            "Start Time",
+            initVal="0.0"
+        )
+        self.endTime = LabeledEntry(
+            basicInfoFrame,
+            1,
+            "End Time",
+            initVal="0.0"
+        )
+        self.startFreq = LabeledEntry(
+            basicInfoFrame,
+            2,
+            "Start Freq",
+            initVal = "0.0"
+        )
+        self.endFreq = LabeledEntry(
+            basicInfoFrame,
+            3,
+            "End Freq",
+            initVal = "0.0"
+        )
 
 
 class App(tk.Frame):
@@ -202,6 +262,10 @@ class App(tk.Frame):
         # Add the frame to the canvas
         rightCanvas.create_window((0, 0), window=rightFrameScrollable, anchor=tk.NW)
         
+        self.fftInspector = FFTDetailInspector(rightFrameScrollable)
+        self.fftInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        
     def DrawBottomFrame(self):
         """
         Method to draw the bottom frame
@@ -338,15 +402,19 @@ class App(tk.Frame):
         # Slice the spectrum array
         slicedSpectrum = self.mainAudio.fftSpectrum[ySpan[0]:ySpan[1], xSpan[0]:xSpan[1]]
         
-        print("FFT Spectrum Sliced:")
-        
+        # Update FFT Detail Inspector
         self.fftDetailViewAx.clear()
         self.fftDetailViewAx.imshow(
             slicedSpectrum,
             aspect='auto',
             origin='lower')
-        self.fftDetailViewAx.set_title("FFT Spectrum")
         self.fftDetailCanvas.draw()
+        
+        self.fftInspector.startTime.SetText(str(xSpan[0] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
+        self.fftInspector.endTime.SetText(str(xSpan[1] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
+        freqArr = librosa.fft_frequencies(sr=self.mainAudio.sampleRate, n_fft=self.mainAudio.fftSpectrum.shape[1])
+        self.fftInspector.startFreq.SetText(str(freqArr[int(ySpan[0])]))
+        self.fftInspector.endFreq.SetText(str(freqArr[(ySpan[1])]))
         
         self.fftDetailAudio.ReconstructAudio(
             slicedSpectrum,
@@ -355,8 +423,7 @@ class App(tk.Frame):
         )
         
         self.fftDetailAudioPlayer.Play()
-        
-        
+            
     def OnClose(self):
         """
         Method to exit the program
