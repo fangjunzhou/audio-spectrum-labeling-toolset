@@ -6,6 +6,7 @@ import numpy as np
 from Utils.AudioProcess import Audio
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.widgets import Cursor
 
 
 class AudioPlot:
@@ -23,6 +24,8 @@ class AudioPlot:
         # The matplotlib axes object
         self.ax: plt.Axes = ax
         self.canvas: FigureCanvasTkAgg = canvas
+        self.canvas.mpl_connect("button_press_event", self.OnCanvasClick)
+        self.canvas.mpl_connect("button_release_event", self.OnCanvasRelease)
 
         # The time position of the cursor.
         self.cursorPosition: float = 0
@@ -43,6 +46,22 @@ class AudioPlot:
             position = self.audio.audioLength
         self.cursorPosition = position / self.audio.audioLength
         self.Plot()
+    
+    def OnCanvasClick(self, event) -> None:
+        """
+        Method to handle the click event on the canvas.
+        """
+        print(
+            f"You clicked on the canvas at position ({event.xdata}, {event.ydata})"
+        )
+    
+    def OnCanvasRelease(self, event) -> None:
+        """
+        Method to handle the release event on the canvas.
+        """
+        print(
+            f"You released on the canvas at position ({event.xdata}, {event.ydata})"
+        )
 
 
 class AudioMagnitudePlot(AudioPlot):
@@ -103,7 +122,11 @@ class AudioSpectrumPlot(AudioPlot):
         super().__init__(audio, ax, canvas)
 
         # Settings for the audio spectrum plot
-        self.brightnessEnhancement = 1.0
+        self.brightnessEnhancement = 0
+        self.contrastEnhancement = 1.0
+        
+        # Plot cursor
+        self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
 
     def Plot(self) -> None:
         # Get the audio spectrum
@@ -111,14 +134,21 @@ class AudioSpectrumPlot(AudioPlot):
 
         if audioSpectrum is None:
             return
-
-        # Enhance the brightness of the audio spectrum, add a constant to each element
-        audioSpectrum = audioSpectrum ** self.brightnessEnhancement
+        
+        # Get max value in the audio spectrum
+        maxVal = np.amax(audioSpectrum)
+        audioSpectrum = audioSpectrum / maxVal
+        
+        # Enhance the contrast of the audio spectrum
+        audioSpectrum = 1 - (1-audioSpectrum)**self.contrastEnhancement
+        
+        # Enhance the brightness of the spectrum
+        audioSpectrum = audioSpectrum + self.brightnessEnhancement
 
         # Clear the axes
         self.ax.cla()
         # Plot the audio spectrum
-        self.ax.imshow(audioSpectrum, aspect='auto', origin='lower')
+        self.ax.imshow(audioSpectrum, aspect='auto', origin='lower', vmin=0, vmax=1)
 
         # Set ticks of the x axis to be the corresponding time position
         sampleIndeces = np.arange(0, len(self.audio.fftTimeSpan), len(
@@ -150,5 +180,10 @@ class AudioSpectrumPlot(AudioPlot):
 
     def SetBrightnessEnhancement(self, value: float) -> None:
         self.brightnessEnhancement = value
+
+        self.Plot()
+    
+    def SetContrastEnhancement(self, value: float) -> None:
+        self.contrastEnhancement = value
 
         self.Plot()
