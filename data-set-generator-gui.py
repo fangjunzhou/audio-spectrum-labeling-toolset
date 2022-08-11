@@ -97,9 +97,9 @@ class App(tk.Frame):
         self.openFileName = tk.StringVar()
         self.openFileName.set("Select a file")
 
-        fileNameLabel = tk.Label(self.topFrame, textvariable=self.openFileName)
+        fileNameLabel = ttk.Label(self.topFrame, textvariable=self.openFileName)
         fileNameLabel.pack(side=tk.LEFT, expand=True)
-        selectFileButton = tk.Button(
+        selectFileButton = ttk.Button(
             self.topFrame, text="Select a file", command=self.SelectFile)
         selectFileButton.pack(side=tk.LEFT)
 
@@ -140,34 +140,34 @@ class App(tk.Frame):
         leftCanvas.create_window((0, 0), window=leftFrameScrollable, anchor=tk.NW)
         
         # Label for Spectrogram
-        spectrogramLabel = tk.Label(
+        spectrogramLabel = ttk.Label(
             leftFrameScrollable, text="Spectrogram Settings")
         spectrogramLabel.grid(row=0, column=0)
 
         # Slider for Spectrogram brightness enhancement
-        brightnessSliderLabel = tk.Label(
+        brightnessSliderLabel = ttk.Label(
             leftFrameScrollable, text="Brightness")
         brightnessSliderLabel.grid(row=1, column=0)
-        brightnessSlider = tk.Scale(
+        brightnessSlider = ttk.Scale(
             leftFrameScrollable,
-            from_=0, to=1, resolution=.001,
+            from_=0, to=1,
             orient=tk.HORIZONTAL,
             command=self.BrightnessSlider)
         brightnessSlider.set(0)
         brightnessSlider.grid(row=1, column=1)
         
         # Slider for Spectrogram contrast enhancement
-        contrastSliderLabel = tk.Label(
+        self.fftContrastCurveCanvas = FigureCanvasTkAgg(self.fftContrastCurveFig, leftFrameScrollable)
+        contrastSliderLabel = ttk.Label(
             leftFrameScrollable, text="Contrast")
         contrastSliderLabel.grid(row=2, column=0)
-        contrastSlider = tk.Scale(
+        contrastSlider = ttk.Scale(
             leftFrameScrollable,
-            from_=1, to=32, resolution=.01,
+            from_=1, to=32,
             orient=tk.HORIZONTAL,
             command=self.ContrastSlider)
         contrastSlider.set(1)
         contrastSlider.grid(row=2, column=1)
-        self.fftContrastCurveCanvas = FigureCanvasTkAgg(self.fftContrastCurveFig, leftFrameScrollable)
         self.ContrastSlider(1)
         self.fftContrastCurveCanvas.get_tk_widget().grid(row=3, column=0, columnspan=2)
     
@@ -213,12 +213,12 @@ class App(tk.Frame):
         playControlFrame = tk.Frame(self.bottomFrame)
         playControlFrame.pack(side=tk.TOP)
         for key in playControl:
-            playControl[key] = tk.Button(
+            playControl[key] = ttk.Button(
                 playControlFrame, text=key, command=playControl[key])
             playControl[key].pack(side=tk.LEFT)
 
         # Status bar
-        statusBar = tk.Label(self.bottomFrame, textvariable=self.status)
+        statusBar = ttk.Label(self.bottomFrame, textvariable=self.status)
         statusBar.pack(side=BOTTOM, anchor=W)
 
     def SelectFile(self):
