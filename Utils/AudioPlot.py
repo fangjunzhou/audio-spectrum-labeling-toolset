@@ -1,6 +1,6 @@
 
-import math
-import re
+import librosa
+import librosa.display
 from turtle import pos
 import numpy as np
 from Utils.AudioProcess import Audio
@@ -175,30 +175,8 @@ class AudioSpectrumPlot(AudioPlot):
         # Plot the audio spectrum
         self.ax.imshow(audioSpectrum, aspect='auto', origin='lower', vmin=0, vmax=1)
 
-        # Set ticks of the x axis to be the corresponding time position
-        sampleIndeces = np.arange(0, len(self.audio.fftTimeSpan), len(
-            self.audio.fftTimeSpan) // self.X_TICK_NUMBER)
-        self.ax.set_xticks(sampleIndeces)
-        tickLabels = [
-            (
-                "{:.2f}".format(self.audio.audioLength *
-                                i / len(self.audio.fftTimeSpan))
-            ) for i in sampleIndeces]
-        self.ax.set_xticklabels(tickLabels)
-        # Set the x-axis label
-        self.ax.set_xlabel("Time (s)")
-
-        # Set the ticks of the y axis to be the corresponding frequency position
-        sampleIndeces = np.arange(0, len(self.audio.fftFreqSample), len(
-            self.audio.fftFreqSample) // self.Y_TICK_NUMBER)
-        self.ax.set_yticks(sampleIndeces)
-        tickLabels = [
-            self.audio.fftFreqSample[i] for i in sampleIndeces]
-        self.ax.set_yticklabels(tickLabels)
-        self.ax.set_ylabel("Frequency (Hz)")
-
         # Plot the cursor as a vertical line
-        self.ax.axvline(self.cursorPosition * len(self.audio.fftTimeSpan), color='r')
+        self.ax.axvline(self.cursorPosition * self.audio.fftSpectrum.shape[1], color='r')
 
         # Update the canvas
         self.canvas.draw()
