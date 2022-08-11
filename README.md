@@ -18,7 +18,7 @@ Or (if you like https like an old man):
 git clone https://github.com/Fangjun-Zhou/Audio-Spectrum-Labeling-Toolset.git
 ```
 
-Entert the cloned repo:
+Enter the cloned repo:
 
 ```bash
 cd Audio-Spectrum-Labeling-Toolset
