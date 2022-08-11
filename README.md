@@ -1,6 +1,6 @@
 # Audio-Spectrum-Labeling-Toolset
 
-![image](https://user-images.githubusercontent.com/79500078/184058159-b9252996-6e5d-4e9f-8161-e5e13eb9261f.png)
+![image](https://user-images.githubusercontent.com/79500078/184070488-ae92580a-7c26-4ca5-8952-24426da9ddc4.png)
 
 TODO: Intro
 
