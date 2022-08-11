@@ -14,7 +14,12 @@ class AudioPlot:
     Base class for all audio plots.
     """
 
-    def __init__(self, audio: Audio, ax: plt.Axes, canvas: FigureCanvasTkAgg) -> None:
+    def __init__(self,
+                 audio: Audio,
+                 ax: plt.Axes,
+                 canvas: FigureCanvasTkAgg,
+                 onRelease: callable = None,
+    ) -> None:
         # Constants
         self.X_TICK_NUMBER = 16
         self.Y_TICK_NUMBER = 8
@@ -29,6 +34,11 @@ class AudioPlot:
 
         # The time position of the cursor.
         self.cursorPosition: float = 0
+        
+        # Mouse cursor related
+        self.onRelease = onRelease
+        self.pressCoord: tuple(float, float) = None
+        self.releaseCoord: tuple(float, float) = None
 
     def Plot(self) -> None:
         """
@@ -51,17 +61,26 @@ class AudioPlot:
         """
         Method to handle the click event on the canvas.
         """
-        print(
-            f"You clicked on the canvas at position ({event.xdata}, {event.ydata})"
-        )
+        self.pressCoord = (event.xdata, event.ydata)
     
     def OnCanvasRelease(self, event) -> None:
         """
         Method to handle the release event on the canvas.
         """
-        print(
-            f"You released on the canvas at position ({event.xdata}, {event.ydata})"
-        )
+        self.releaseCoord = (event.xdata, event.ydata)
+        
+        self.OnRelease(self.pressCoord, self.releaseCoord)
+    
+    def OnRelease(self, startCoord: tuple[float, float], endCoord: tuple[float, float]) -> None:
+        """
+        Method to handle the release event on the canvas.
+        """
+        print(f"{startCoord} => {endCoord}")
+        
+        if self.onRelease is None:
+            return
+        
+        self.onRelease(startCoord, endCoord)
 
 
 class AudioMagnitudePlot(AudioPlot):
@@ -118,8 +137,14 @@ class AudioSpectrumPlot(AudioPlot):
     Audio spectrum plot.
     """
 
-    def __init__(self, audio: Audio, ax: plt.Axes, canvas: FigureCanvasTkAgg) -> None:
-        super().__init__(audio, ax, canvas)
+    def __init__(
+        self,
+        audio: Audio,
+        ax: plt.Axes,
+        canvas: FigureCanvasTkAgg,
+        onRelease: callable = None
+    ) -> None:
+        super().__init__(audio, ax, canvas, onRelease)
 
         # Settings for the audio spectrum plot
         self.brightnessEnhancement = 0
