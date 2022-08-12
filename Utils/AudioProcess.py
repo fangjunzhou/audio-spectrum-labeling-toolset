@@ -107,16 +107,28 @@ class AudioPlayer:
 
         self.isPlaying = True
         
+        # Get the sub array of the audio array
+        playAudioArray = self.audio.audioArray[int(self.audio.cursorPosition * self.audio.sampleRate):]
+        
         # Update the time callback
-        startTime = time.time()
-        sd.play(self.audio.audioArray, self.audio.sampleRate)
-        while time.time() - startTime < self.audio.audioLength:
+        timeStamp = time.time()
+        sd.play(playAudioArray, self.audio.sampleRate)
+        while self.audio.cursorPosition < self.audio.audioLength:
+            # Update the time callback
             if self.timeCallback is not None:
-                self.timeCallback(time.time() - startTime)
+                self.timeCallback(self.audio.cursorPosition)
+            # Get delta time
+            deltaTime = time.time() - timeStamp
+            timeStamp = time.time()
+            # Increase the cursor position
+            self.audio.cursorPosition += deltaTime
             time.sleep(self.responseRate)
             if not self.isPlaying:
                 return
         
+        # Reset the cursor position
+        self.audio.cursorPosition = 0
+        self.timeCallback(self.audio.cursorPosition)
         self.isPlaying = False
         
     def Pause(self) -> None:
