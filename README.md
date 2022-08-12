@@ -53,3 +53,9 @@ python3 data-set-generator-gui.py
 ```
 
 # Usage
+
+The software contains 4 major components: 
+
+![SLT 1](https://user-images.githubusercontent.com/79500078/184290931-79bbd813-d353-4a8b-bc19-fac506d97230.jpg)
+
+TODO: Basic operations...
