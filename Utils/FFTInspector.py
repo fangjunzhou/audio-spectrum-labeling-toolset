@@ -1,11 +1,12 @@
 from tkinter import *
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from matplotlib import pyplot as plt
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from Utils.AudioProcess import Audio, AudioPlayer
+from Utils.DataSetLabelInspector import DataSetLabel, DataSetLabelsInspector
 
 class LabeledEntry:
     """
@@ -32,8 +33,10 @@ class FFTDetailInspector(tk.Frame):
     """
     Inspector to browse FFT Detials.
     """
-    def __init__(self, master = None) -> None:
+    def __init__(self, labelInspector: DataSetLabelsInspector, master = None) -> None:
         super().__init__(master)
+        
+        self.labelInspector = labelInspector
         
         # FFT detail view
         self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
@@ -76,25 +79,29 @@ class FFTDetailInspector(tk.Frame):
         basicInfoFrame = ttk.Frame(rightFrameScrollable)
         basicInfoFrame.pack(side=TOP, fill=X)
         
-        self.startTime = LabeledEntry(
+        self.startTime: float = 0.0
+        self.startTimeLabeledEntry = LabeledEntry(
             basicInfoFrame,
             0,
             "Start Time",
             initVal="0.0"
         )
-        self.endTime = LabeledEntry(
+        self.endTime: float = 0.0
+        self.endTimeLabeledEntry = LabeledEntry(
             basicInfoFrame,
             1,
             "End Time",
             initVal="0.0"
         )
-        self.startFreq = LabeledEntry(
+        self.startFreq: float = 0.0
+        self.startFreqLabeledEntry = LabeledEntry(
             basicInfoFrame,
             2,
             "Start Freq",
             initVal = "0.0"
         )
-        self.endFreq = LabeledEntry(
+        self.endFreq: float = 0.0
+        self.endFreqLabeledEntry = LabeledEntry(
             basicInfoFrame,
             3,
             "End Freq",
@@ -105,6 +112,23 @@ class FFTDetailInspector(tk.Frame):
             rightFrameScrollable, text="Play Detail", command=self.PlayFFTDetail)
         playFFTDetailButton.pack(side=tk.TOP, fill=X)
         
+        # Add to current label group
+        addToCurrentLabelGroupButton = ttk.Button(
+            rightFrameScrollable, text="Add to Current Label Group", command=self.AddToCurrentLabelGroup)
+        addToCurrentLabelGroupButton.pack(side=tk.TOP, fill=X)
+    
+    def SetFFTDetail(self, startTime, endTime, startFreq, endFreq):
+        """
+        Set the detail of fft.
+        """
+        self.startTime = startTime
+        self.startTimeLabeledEntry.SetText(str(startTime))
+        self.endTime = endTime
+        self.endTimeLabeledEntry.SetText(str(endTime))
+        self.startFreq = startFreq
+        self.startFreqLabeledEntry.SetText(str(startFreq))
+        self.endFreq = endFreq
+        self.endFreqLabeledEntry.SetText(str(endFreq))
     
     def PlayFFTDetail(self):
         """
@@ -115,3 +139,26 @@ class FFTDetailInspector(tk.Frame):
         
         # Play the audio file
         self.fftDetailAudioPlayer.Play()
+        
+    def AddToCurrentLabelGroup(self):
+        """
+        Add the fft detail to the current label group
+        """
+        # Check current selected group is not None
+        if self.labelInspector.selectedGroup is None:
+            messagebox.showerror("Error", "No group selected")
+            return
+        
+        # Add the fft detail to the current label group
+        self.labelInspector.selectedGroup.AddDataSetLabel(
+            DataSetLabel(
+                self.labelInspector.selectedGroup.groupName,
+                self.startTime,
+                self.endTime,
+                self.startFreq,
+                self.endFreq
+            )
+        )
+        
+        # Update the label inspector
+        self.labelInspector.UpdateGroupLabels()

@@ -54,10 +54,6 @@ class App(tk.Frame):
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
         self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
-        
-        # Data set groups
-        self.dataSetGroups: list[DataSetLabelGroup] = []
-        
 
         # =====FRAMES=====
 
@@ -152,7 +148,6 @@ class App(tk.Frame):
         
         # Data set label groups
         self.dataSetLabelInspector = DataSetLabelsInspector(
-            self.dataSetGroups,
             master=self.leftFrame
         )
         self.dataSetLabelInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -163,6 +158,7 @@ class App(tk.Frame):
         """
         
         self.fftInspector = FFTDetailInspector(
+            self.dataSetLabelInspector,
             master=self.rightFrame
         )
         self.fftInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -317,11 +313,13 @@ class App(tk.Frame):
             origin='lower')
         self.fftInspector.fftDetailCanvas.draw()
         
-        self.fftInspector.startTime.SetText(str(xSpan[0] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
-        self.fftInspector.endTime.SetText(str(xSpan[1] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength))
         freqArr = librosa.fft_frequencies(sr=self.mainAudio.sampleRate, n_fft=self.mainAudio.fftSpectrum.shape[1])
-        self.fftInspector.startFreq.SetText(str(freqArr[int(ySpan[0])]))
-        self.fftInspector.endFreq.SetText(str(freqArr[(ySpan[1])]))
+        self.fftInspector.SetFFTDetail(
+            xSpan[0] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength,
+            xSpan[1] / self.mainAudio.fftSpectrum.shape[1] * self.mainAudio.audioLength,
+            freqArr[int(ySpan[0])],
+            freqArr[(ySpan[1])]
+        )
         
         self.fftInspector.fftDetailAudio.ReconstructAudio(
             slicedSpectrum,
