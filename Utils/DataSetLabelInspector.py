@@ -60,43 +60,20 @@ class DataSetLabelsInspector(tk.Frame):
         # -----INITIALIZE-----
         self.dataSetLabelGroups: list[DataSetLabelGroup] = []
         
+        self.selectedGroup: DataSetLabelGroup = None
+        self.selectedLabel: DataSetLabel = None
+        
         # -----RENDER-----
-        # Create canvas for spectrum frame
-        self.labelGroupCanvas = Canvas(master, takefocus=0)
-        self.labelGroupCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Add a scrollbar to the canvas
-        labelGroupScrollbar = ttk.Scrollbar(master, orient=tk.VERTICAL, command=self.labelGroupCanvas.yview)
-        labelGroupScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Configure the canvas
-        self.labelGroupCanvas.configure(yscrollcommand=labelGroupScrollbar.set)
-        self.labelGroupCanvas.bind(
-            '<Configure>',
-            lambda e: self.labelGroupCanvas.configure(
-                scrollregion=self.labelGroupCanvas.bbox('all')
-            )
-        )
-        
-        # Create scrollable frame for canvas
-        frameScrollable = tk.Frame(self.labelGroupCanvas)
-        # Add the frame to the canvas
-        self.canvasFrame = self.labelGroupCanvas.create_window((0, 0), window=frameScrollable, anchor=tk.NW)
-        # Expand the frame to fill the canvas
-        frameScrollable.bind("<Configure>", self.OnFrameConfigure)
-        self.labelGroupCanvas.bind('<Configure>', self.FrameWidth)
-        
         # Title
-        title = ttk.Label(frameScrollable, text="Data Set Label Inspector")
+        title = ttk.Label(master, text="Data Set Label Inspector")
         title.pack(side=TOP)
         
         # Drop down menu to select a group
-        self.selectedGroup: DataSetLabelGroup = None
         self.selectedGroupName = tk.StringVar()
         availableGroupNames = self.GetDataSetLabelGroupNames()
         self.selectedGroupName.set(availableGroupNames[0])
         self.groupOptions = ttk.OptionMenu(
-            frameScrollable,
+            master,
             self.selectedGroupName,
             availableGroupNames,
             command=self.OnSelectGroup
@@ -106,28 +83,56 @@ class DataSetLabelsInspector(tk.Frame):
         # Name of the new group
         self.newGroupName = tk.StringVar()
         self.newGroupName.set("Group 1")
-        newGroupEntry = ttk.Entry(frameScrollable, textvariable=self.newGroupName)
+        newGroupEntry = ttk.Entry(master, textvariable=self.newGroupName)
         newGroupEntry.pack(side=tk.TOP, fill=tk.X)
         
         # Button to add a new group
-        addGroupButton = ttk.Button(frameScrollable, text="Add Group", command=self.AddGroup)
+        addGroupButton = ttk.Button(master, text="Add Group", command=self.AddGroup)
         addGroupButton.pack(side=tk.TOP, fill=tk.X)
         
         # Button to delete current group
-        deleteGroupButton = ttk.Button(frameScrollable, text="Delete Group", command=self.DeleteGroup)
+        deleteGroupButton = ttk.Button(master, text="Delete Group", command=self.DeleteGroup)
         deleteGroupButton.pack(side=tk.TOP, fill=tk.X)
         
+        # Create canvas for label list
+        self.labelListCanvas = Canvas(master, takefocus=0)
+        self.labelListCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add a scrollbar to the canvas
+        labelListScrollbar = ttk.Scrollbar(master, orient=tk.VERTICAL, command=self.labelListCanvas.yview)
+        labelListScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Configure the canvas
+        self.labelListCanvas.configure(yscrollcommand=labelListScrollbar.set)
+        self.labelListCanvas.bind(
+            '<Configure>',
+            lambda e: self.labelListCanvas.configure(
+                scrollregion=self.labelListCanvas.bbox('all')
+            )
+        )
+        
+        # Create scrollable frame for canvas
+        labelListFrameScrollable = tk.Frame(self.labelListCanvas)
+        # Add the frame to the canvas
+        self.canvasFrame = self.labelListCanvas.create_window((0, 0), window=labelListFrameScrollable, anchor=tk.NW)
+        # Expand the frame to fill the canvas
+        labelListFrameScrollable.bind("<Configure>", self.OnFrameConfigure)
+        self.labelListCanvas.bind('<Configure>', self.FrameWidth)
+        
         # List of current group labels
-        self.currGroupLabels = tk.Listbox(frameScrollable, selectmode=tk.EXTENDED)
-        self.currGroupLabels.pack(side=tk.TOP, fill=tk.X)
+        self.currGroupLabels = tk.Listbox(labelListFrameScrollable, selectmode=tk.EXTENDED)
+        self.currGroupLabels.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.currGroupLabels.bind("<<ListboxSelect>>", self.OnLabelSelected)
+        
+        # Remove selected label button
+        removeSelectedLabelButton = ttk.Button(labelListFrameScrollable, text="Remove Selected Label", command=self.RemoveSelectedLabel)
     
     def FrameWidth(self, event):
         canvas_width = event.width
-        self.labelGroupCanvas.itemconfig(self.canvasFrame, width = canvas_width)
+        self.labelListCanvas.itemconfig(self.canvasFrame, width = canvas_width)
 
     def OnFrameConfigure(self, event):
-        self.labelGroupCanvas.configure(scrollregion=self.labelGroupCanvas.bbox("all"))
+        self.labelListCanvas.configure(scrollregion=self.labelListCanvas.bbox("all"))
     
     def UpdateGroupOptions(self) -> None:
         """
@@ -161,6 +166,7 @@ class DataSetLabelsInspector(tk.Frame):
         
         # Update the selected group
         self.selectedGroup = None
+        self.selectedLabel = None
         for group in self.dataSetLabelGroups:
             if group.groupName == groupName:
                 self.selectedGroup = group
@@ -238,5 +244,24 @@ class DataSetLabelsInspector(tk.Frame):
         Select a label.
         """
         # Get the selected index
-        indx = self.currGroupLabels.curselection()
-        print(f"Selected index: {indx}")
+        indx = self.currGroupLabels.curselection()[0]
+        # Select the label in the label list
+        self.selectedLabel = self.selectedGroup.dataSetLabels[indx]
+        
+        print(f"Selected label: {str(self.selectedLabel)}")
+    
+    def RemoveSelectedLabel(self) -> None:
+        """
+        Remove the selected label.
+        """
+        # Remove the selected label from the group
+        
+        print(f"Removing label: {str(self.selectedLabel)}")
+        self.selectedGroup.dataSetLabels.remove(self.selectedLabel)
+        
+        # Update the label list
+        self.UpdateGroupLabels()
+        # Set the selected label to None
+        self.selectedLabel = None
+        
+        print("Label removed.")
