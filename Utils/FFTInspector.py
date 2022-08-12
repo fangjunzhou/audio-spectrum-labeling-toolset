@@ -140,7 +140,7 @@ class FFTDetailInspector(tk.Frame):
         # Play the audio file
         self.fftDetailAudioPlayer.Play()
         
-    def AddToCurrentLabelGroup(self):
+    def AddToCurrentLabelGroup(self, event=None):
         """
         Add the fft detail to the current label group
         """

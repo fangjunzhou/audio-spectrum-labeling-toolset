@@ -1,5 +1,6 @@
 from curses.panel import bottom_panel
 import os
+import platform
 import librosa
 import threading
 from time import sleep, time
@@ -54,28 +55,6 @@ class App(tk.Frame):
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
         self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
-        
-        # =====MENU BAR=====
-        self.menuBar = tk.Menu(self.master)
-        fileMenu = tk.Menu(self.menuBar, tearoff=0)
-        playMenu = tk.Menu(self.menuBar, tearoff=0)
-        
-        # File menu
-        fileMenu.add_command(label="Open (Cmd/Ctrl + O)", command=self.SelectFile)
-        self.master.bind("<Command-o>", self.SelectFile)
-        self.master.bind("<Control-o>", self.SelectFile)
-        
-        # Play menu
-        playMenu.add_command(label="Play (Cmd/Ctrl + P)", command=self.Play)
-        self.master.bind("<Command-p>", self.Play)
-        self.master.bind("<Control-p>", self.Play)
-        
-        playMenu.add_command(label="Pause (Cmd/Ctrl + Shift + P)", command=self.Pause)
-        self.master.bind("<Command-P>", self.Pause)
-        self.master.bind("<Control-P>", self.Pause)
-        
-        self.menuBar.add_cascade(label="File", menu=fileMenu)
-        self.menuBar.add_cascade(label="Play", menu=playMenu)
 
         # =====FRAMES=====
 
@@ -104,6 +83,47 @@ class App(tk.Frame):
         self.DrawRightFrame()
 
         self.DrawBottomFrame()
+        
+        # =====MENU BARS=====
+        self.menuBar = tk.Menu(self.master)
+        fileMenu = tk.Menu(self.menuBar, tearoff=0)
+        playMenu = tk.Menu(self.menuBar, tearoff=0)
+        spectrogramMenu = tk.Menu(self.menuBar, tearoff=0)
+        
+        # File menu
+        if platform.system() == "Darwin":
+            fileMenu.add_command(label="Open (Cmd + O)", command=self.SelectFile)
+            self.master.bind("<Command-o>", self.SelectFile)
+        elif platform.system() == "Windows":
+            fileMenu.add_command(label="Open (Ctrl + O)", command=self.SelectFile)
+            self.master.bind("<Control-o>", self.SelectFile)
+        
+        # Play menu
+        if platform.system() == "Darwin":
+            playMenu.add_command(label="Play (Cmd + P)", command=self.Play)
+            self.master.bind("<Command-p>", self.Play)
+        elif platform.system() == "Windows":
+            playMenu.add_command(label="Play (Ctrl + P)", command=self.Play)
+            self.master.bind("<Control-p>", self.Play)
+        
+        if platform.system() == "Darwin":
+            playMenu.add_command(label="Pause (Cmd + Shift + P)", command=self.Pause)
+            self.master.bind("<Command-P>", self.Pause)
+        elif platform.system() == "Windows":
+            playMenu.add_command(label="Pause (Ctrl + Shift + P)", command=self.Pause)
+            self.master.bind("<Control-P>", self.Pause)
+        
+        # Spectrogram menu
+        if platform.system() == "Darwin":
+            spectrogramMenu.add_command(label="Label Spectrogram (Cmd + L)", command=self.fftInspector.AddToCurrentLabelGroup)
+            self.master.bind("<Command-l>", self.fftInspector.AddToCurrentLabelGroup)
+        elif platform.system() == "Windows":
+            spectrogramMenu.add_command(label="Label Spectrogram (Ctrl + L)", command=self.fftInspector.AddToCurrentLabelGroup)
+            self.master.bind("<Control-l>", self.fftInspector.AddToCurrentLabelGroup)
+        
+        self.menuBar.add_cascade(label="File", menu=fileMenu)
+        self.menuBar.add_cascade(label="Play", menu=playMenu)
+        self.menuBar.add_cascade(label="Spectrogram", menu=spectrogramMenu)
 
     def DrawTopFrame(self):
         """
