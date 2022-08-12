@@ -48,6 +48,7 @@ class Audio:
     
     def ReconstructAudio(
         self,
+        sampleRate: int,
         fftSpectrum: np.ndarray,
         freqHeight: int,
         freqSpan: tuple[int, int],
@@ -58,6 +59,8 @@ class Audio:
         # Check 0 <= freqSpan[0] <= freqSpan[1] <= freqHeight
         if freqSpan[0] < 0 or freqSpan[1] > freqHeight or freqSpan[0] > freqSpan[1]:
             raise ValueError("Invalid frequency span")
+        
+        self.sampleRate = sampleRate
         
         # Reconstruct the audio from the FFT spectrum
         # Create a new np array for spectrogram
@@ -104,6 +107,10 @@ class AudioPlayer:
         """
         if self.isPlaying or self.audio.audioArray is None:
             return
+        
+        # Check if the audio array is empty
+        if self.audio.audioArray.size == 0:
+            return
 
         self.isPlaying = True
         
@@ -128,7 +135,8 @@ class AudioPlayer:
         
         # Reset the cursor position
         self.audio.cursorPosition = 0
-        self.timeCallback(self.audio.cursorPosition)
+        if self.timeCallback is not None:
+            self.timeCallback(self.audio.cursorPosition)
         self.isPlaying = False
         
     def Pause(self) -> None:

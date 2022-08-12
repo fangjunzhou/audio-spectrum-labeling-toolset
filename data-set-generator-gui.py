@@ -54,6 +54,28 @@ class App(tk.Frame):
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
         self.fftContrastCurveFig.set_size_inches(3, 2)
         self.fftContrastCurveFig.tight_layout()
+        
+        # =====MENU BAR=====
+        self.menuBar = tk.Menu(self.master)
+        fileMenu = tk.Menu(self.menuBar, tearoff=0)
+        playMenu = tk.Menu(self.menuBar, tearoff=0)
+        
+        # File menu
+        fileMenu.add_command(label="Open (Cmd/Ctrl + O)", command=self.SelectFile)
+        self.master.bind("<Command-o>", self.SelectFile)
+        self.master.bind("<Control-o>", self.SelectFile)
+        
+        # Play menu
+        playMenu.add_command(label="Play (Cmd/Ctrl + P)", command=self.Play)
+        self.master.bind("<Command-p>", self.Play)
+        self.master.bind("<Control-p>", self.Play)
+        
+        playMenu.add_command(label="Pause (Cmd/Ctrl + Shift + P)", command=self.Pause)
+        self.master.bind("<Command-P>", self.Pause)
+        self.master.bind("<Control-P>", self.Pause)
+        
+        self.menuBar.add_cascade(label="File", menu=fileMenu)
+        self.menuBar.add_cascade(label="Play", menu=playMenu)
 
         # =====FRAMES=====
 
@@ -168,8 +190,8 @@ class App(tk.Frame):
         Method to draw the bottom frame
         """
         playControl = {
-            "Play From Start": self.Play,
-            "Stop": self.Pause
+            "Play": self.Play,
+            "Pause": self.Pause
         }
         playControlFrame = tk.Frame(self.bottomFrame)
         playControlFrame.pack(side=tk.TOP)
@@ -183,7 +205,7 @@ class App(tk.Frame):
         statusBar.pack(side=BOTTOM, anchor=W)
 
 
-    def SelectFile(self):
+    def SelectFile(self, event=None):
         # Get current working directory
         currDir = os.getcwd()
         # Open a file dialog and set the file name in the label
@@ -252,7 +274,7 @@ class App(tk.Frame):
         
         self.audioSpectrumPlot.SetContrastEnhancement(float(value))
 
-    def Play(self):
+    def Play(self, event=None):
         """
         Play the audio file
         """
@@ -262,7 +284,7 @@ class App(tk.Frame):
         # Play the audio file
         self.mainAudioPlayer.Play()
 
-    def Pause(self):
+    def Pause(self, event=None):
         """
         Pause the audio file
         """
@@ -277,7 +299,6 @@ class App(tk.Frame):
         Method to update the audio cursor
         """
         self.audioMagnitudePlot.SetCursorPosition(value)
-        self.audioSpectrumPlot.SetCursorPosition(value)
     
     def SpectrumSelected(self, startCoord: tuple[float, float], endCoord: tuple[float, float]):
         """
@@ -322,6 +343,7 @@ class App(tk.Frame):
         )
         
         self.fftInspector.fftDetailAudio.ReconstructAudio(
+            self.mainAudio.sampleRate,
             slicedSpectrum,
             self.mainAudio.fftSpectrum.shape[0],
             ySpan
@@ -349,6 +371,7 @@ dataSetGenerator = App()
 dataSetGenerator.master.title("Audio Data Set Generator")
 dataSetGenerator.master.minsize(width=1200, height=600)
 dataSetGenerator.master.geometry("1200x600")
+dataSetGenerator.master.configure(menu=dataSetGenerator.menuBar)
 
 # start the program
 dataSetGenerator.mainloop()
