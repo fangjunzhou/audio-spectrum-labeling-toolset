@@ -94,42 +94,18 @@ class DataSetLabelsInspector(tk.Frame):
         deleteGroupButton = ttk.Button(master, text="Delete Group", command=self.DeleteGroup)
         deleteGroupButton.pack(side=tk.TOP, fill=tk.X)
         
-        # Create canvas for label list
-        self.labelListCanvas = Canvas(master, takefocus=0)
-        self.labelListCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Remove selected label button
+        removeSelectedLabelButton = ttk.Button(master, text="Remove Selected Label", command=self.RemoveSelectedLabel)
+        removeSelectedLabelButton.pack(side=tk.BOTTOM, fill=tk.X)
         
         # Add a scrollbar to the canvas
-        labelListScrollbar = ttk.Scrollbar(master, orient=tk.VERTICAL, command=self.labelListCanvas.yview)
+        labelListScrollbar = ttk.Scrollbar(master, orient=tk.VERTICAL)
         labelListScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Configure the canvas
-        self.labelListCanvas.configure(yscrollcommand=labelListScrollbar.set)
-        self.labelListCanvas.bind(
-            '<Configure>',
-            lambda e: self.labelListCanvas.configure(
-                scrollregion=self.labelListCanvas.bbox('all')
-            )
-        )
-        
-        # Create scrollable frame for canvas
-        labelListFrameScrollable = tk.Frame(self.labelListCanvas)
-        # Add the frame to the canvas
-        self.canvasFrame = self.labelListCanvas.create_window((0, 0), window=labelListFrameScrollable, anchor=tk.NW)
-        # Expand the frame to fill the canvas
-        labelListFrameScrollable.bind("<Configure>", self.OnFrameConfigure)
-        self.labelListCanvas.bind('<Configure>', self.FrameWidth)
-        
         # List of current group labels
-        self.currGroupLabels = tk.Listbox(labelListFrameScrollable, selectmode=tk.EXTENDED)
-        self.currGroupLabels.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.currGroupLabels = tk.Listbox(master, selectmode=tk.EXTENDED, yscrollcommand=labelListScrollbar.set)
+        self.currGroupLabels.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.currGroupLabels.bind("<<ListboxSelect>>", self.OnLabelSelected)
-        
-        # Remove selected label button
-        removeSelectedLabelButton = ttk.Button(labelListFrameScrollable, text="Remove Selected Label", command=self.RemoveSelectedLabel)
-    
-    def FrameWidth(self, event):
-        canvas_width = event.width
-        self.labelListCanvas.itemconfig(self.canvasFrame, width = canvas_width)
 
     def OnFrameConfigure(self, event):
         self.labelListCanvas.configure(scrollregion=self.labelListCanvas.bbox("all"))
@@ -254,8 +230,12 @@ class DataSetLabelsInspector(tk.Frame):
         """
         Remove the selected label.
         """
-        # Remove the selected label from the group
+        # Check if a label is valid
+        if self.selectedLabel is None:
+            messagebox.showerror("Error", "No label selected.")
+            return
         
+        # Remove the selected label from the group
         print(f"Removing label: {str(self.selectedLabel)}")
         self.selectedGroup.dataSetLabels.remove(self.selectedLabel)
         
