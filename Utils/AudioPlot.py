@@ -198,7 +198,7 @@ class AudioSpectrumPlot(AudioPlot):
         )
 
         # Plot the cursor as a vertical line
-        self.ax.axvline(self.cursorPosition * self.audio.fftSpectrum.shape[1], color='r')
+        # self.ax.axvline(self.cursorPosition * self.audio.fftSpectrum.shape[1], color='r')
 
         # Update the canvas
         self.canvas.draw()
