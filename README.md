@@ -2,7 +2,7 @@
 
 ![image](https://user-images.githubusercontent.com/79500078/184285995-7d021ae4-a5e7-4608-ba03-712be2965caf.png)
 
-TODO: Intro
+Audio-Spectrum-Labeling-Toolset is a project developed to help people label audio-spectrum data. The labeled data can be used to train machine learning models.
 
 # Install
 
@@ -12,7 +12,7 @@ TODO: Intro
 git clone git@github.com:Fangjun-Zhou/Audio-Spectrum-Labeling-Toolset.git
 ```
 
-Or (if you like https like an old man):
+Or (if you use https):
 
 ```bash
 git clone https://github.com/Fangjun-Zhou/Audio-Spectrum-Labeling-Toolset.git
@@ -53,5 +53,3 @@ python3 data-set-generator-gui.py
 ```
 
 # Usage
-
-TODO: Add usage explain.

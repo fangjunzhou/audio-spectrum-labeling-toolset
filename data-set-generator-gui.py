@@ -402,7 +402,7 @@ class App(tk.Frame):
 dataSetGenerator = App()
 
 # here are method calls to the window manager class
-dataSetGenerator.master.title("Audio Data Set Generator")
+dataSetGenerator.master.title("Spectrum Labeling Toolset")
 dataSetGenerator.master.minsize(width=1200, height=600)
 dataSetGenerator.master.geometry("1200x600")
 dataSetGenerator.master.configure(menu=dataSetGenerator.menuBar)
