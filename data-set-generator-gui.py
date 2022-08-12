@@ -190,6 +190,7 @@ class App(tk.Frame):
         
         # Data set label groups
         self.dataSetLabelInspector = DataSetLabelsInspector(
+            self.audioSpectrumPlot,
             master=self.leftFrame
         )
         self.dataSetLabelInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)

@@ -2,33 +2,8 @@ from tkinter import *
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-class DataSetLabel:
-    """
-    Data set label instance.
-    """
-    
-    def __init__(
-        self,
-        groupName: str,
-        startTime: float,
-        endTime: float,
-        startFreq: float,
-        endFreq: float,
-    ) -> None:
-        self.groupName = groupName
-        
-        self.startTime: float = startTime
-        self.endTime: float = endTime
-        self.startFreq: float = startFreq
-        self.endFreq: float = endFreq
-    
-    def __str__(self) -> str:
-        return "{0:.2f}s->{1:.2f}s:{2:.2f}Hz->{3:.2f}Hz".format(
-            self.startTime,
-            self.endTime,
-            self.startFreq,
-            self.endFreq,
-        )
+from Utils.DataSetLabel import DataSetLabel
+from Utils.AudioPlot import AudioSpectrumPlot
 
 class DataSetLabelGroup:
     """
@@ -53,6 +28,7 @@ class DataSetLabelsInspector(tk.Frame):
     
     def __init__(
         self,
+        spectrogramPlot: AudioSpectrumPlot,
         master: tk.Frame = None
     ) -> None:
         super().__init__(master)
@@ -61,7 +37,9 @@ class DataSetLabelsInspector(tk.Frame):
         self.dataSetLabelGroups: list[DataSetLabelGroup] = []
         
         self.selectedGroup: DataSetLabelGroup = None
-        self.selectedLabel: DataSetLabel = None
+        self.selectedLabels: list[DataSetLabel] = []
+        
+        self.spectrogramPlot = spectrogramPlot
         
         # -----RENDER-----
         # Title
@@ -142,7 +120,8 @@ class DataSetLabelsInspector(tk.Frame):
         
         # Update the selected group
         self.selectedGroup = None
-        self.selectedLabel = None
+        self.selectedLabels = []
+        self.UpdateLabelHighlight()
         for group in self.dataSetLabelGroups:
             if group.groupName == groupName:
                 self.selectedGroup = group
@@ -219,29 +198,46 @@ class DataSetLabelsInspector(tk.Frame):
         """
         Select a label.
         """
-        # Get the selected index
-        indx = self.currGroupLabels.curselection()[0]
-        # Select the label in the label list
-        self.selectedLabel = self.selectedGroup.dataSetLabels[indx]
+        # Check if group is selected
+        if self.selectedGroup is None:
+            return
         
-        print(f"Selected label: {str(self.selectedLabel)}")
+        # Get the selected index
+        indx = self.currGroupLabels.curselection()
+        # Select the label in the label list
+        self.selectedLabels = self.selectedGroup.dataSetLabels[indx[0]:indx[-1] + 1]
+        self.UpdateLabelHighlight()
+        
+        print(f"{indx[-1] - indx[0] + 1} labels selected.")
     
     def RemoveSelectedLabel(self) -> None:
         """
         Remove the selected label.
         """
         # Check if a label is valid
-        if self.selectedLabel is None:
+        if len(self.selectedLabels) == 0:
             messagebox.showerror("Error", "No label selected.")
             return
         
-        # Remove the selected label from the group
-        print(f"Removing label: {str(self.selectedLabel)}")
-        self.selectedGroup.dataSetLabels.remove(self.selectedLabel)
+        if len(self.selectedLabels) > 1 and not messagebox.askyesno("Remove Multiple Labels", "Are you sure you want to remove all the selected labels?"):
+            # Remove the label from the group
+            self.selectedGroup.dataSetLabels.remove(self.selectedLabels[0])
+        
+        for label in self.selectedLabels:
+            # Remove the selected label from the group
+            print(f"Removing label: {str(label)}")
+            self.selectedGroup.dataSetLabels.remove(label)
         
         # Update the label list
         self.UpdateGroupLabels()
         # Set the selected label to None
-        self.selectedLabel = None
+        self.selectedLabels = []
+        self.UpdateLabelHighlight()
         
         print("Label removed.")
+    
+    def UpdateLabelHighlight(self) -> None:
+        """
+        Update the label highlight.
+        """
+        self.spectrogramPlot.UpdateHighlightedLabels(self.selectedLabels)

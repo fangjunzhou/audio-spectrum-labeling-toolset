@@ -4,9 +4,11 @@ import librosa.display
 from turtle import pos
 import numpy as np
 from Utils.AudioProcess import Audio
-from matplotlib import pyplot as plt
+from matplotlib import patches, pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.widgets import Cursor
+
+from Utils.DataSetLabel import DataSetLabel
 
 
 class AudioPlot:
@@ -145,6 +147,9 @@ class AudioSpectrumPlot(AudioPlot):
         onRelease: callable = None
     ) -> None:
         super().__init__(audio, ax, canvas, onRelease)
+        
+        # Label highlighting
+        self.highlightedLabels: list[DataSetLabel] = []
 
         # Settings for the audio spectrum plot
         self.brightnessEnhancement = 0
@@ -189,7 +194,7 @@ class AudioSpectrumPlot(AudioPlot):
         )
         
         # Get frequency array
-        freqArr = librosa.fft_frequencies(sr=self.audio.sampleRate)
+        freqArr = librosa.fft_frequencies(sr=self.audio.sampleRate, n_fft=self.audio.fftSpectrum.shape[1])
         self.ax.set_yticks(np.arange(0, len(freqArr), len(freqArr) // self.Y_TICK_NUMBER))
         self.ax.set_yticklabels(
             [
@@ -199,6 +204,26 @@ class AudioSpectrumPlot(AudioPlot):
 
         # Plot the cursor as a vertical line
         # self.ax.axvline(self.cursorPosition * self.audio.fftSpectrum.shape[1], color='r')
+        
+        # Plot the highlighted labels
+        for label in self.highlightedLabels:
+            # Get the start and end of x
+            xStart = label.startTime / self.audio.audioLength * audioSpectrum.shape[1]
+            xEnd = label.endTime / self.audio.audioLength * audioSpectrum.shape[1]
+            # Get the first frequency index in freqArr >= label.startFreq
+            yStart = np.argmax(freqArr >= label.startFreq)
+            yEnd = np.argmax(freqArr >= label.endFreq)
+            # Plot the rectangle
+            self.ax.add_patch(
+                patches.Rectangle(
+                    (xStart, yStart),
+                    xEnd - xStart,
+                    yEnd - yStart,
+                    fill=False,
+                    edgecolor='r',
+                    linewidth=2
+                )
+            )
 
         # Update the canvas
         self.canvas.draw()
@@ -210,5 +235,10 @@ class AudioSpectrumPlot(AudioPlot):
     
     def SetContrastEnhancement(self, value: float) -> None:
         self.contrastEnhancement = value
+
+        self.Plot()
+    
+    def UpdateHighlightedLabels(self, labels: list[DataSetLabel]) -> None:
+        self.highlightedLabels = labels
 
         self.Plot()
