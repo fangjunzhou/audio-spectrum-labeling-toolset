@@ -25,3 +25,12 @@ class DataSetLabel:
             self.startFreq,
             self.endFreq,
         )
+    
+    def ToDict(self) -> dict:
+        return {
+            "groupName": self.groupName,
+            "startTime": self.startTime,
+            "endTime": self.endTime,
+            "startFreq": self.startFreq,
+            "endFreq": self.endFreq,
+        }

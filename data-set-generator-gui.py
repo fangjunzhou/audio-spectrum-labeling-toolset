@@ -17,7 +17,7 @@ import numpy as np
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
-from Utils.DataSetLabelInspector import DataSetLabelGroup, DataSetLabelsInspector
+from Utils.DataSetLabelInspector import DataSetLabelsInspector
 from Utils.FFTInspector import FFTDetailInspector
 
 class App(tk.Frame):
@@ -84,46 +84,8 @@ class App(tk.Frame):
 
         self.DrawBottomFrame()
         
-        # =====MENU BARS=====
-        self.menuBar = tk.Menu(self.master)
-        fileMenu = tk.Menu(self.menuBar, tearoff=0)
-        playMenu = tk.Menu(self.menuBar, tearoff=0)
-        spectrogramMenu = tk.Menu(self.menuBar, tearoff=0)
+        self.MenuBar()
         
-        # File menu
-        if platform.system() == "Darwin":
-            fileMenu.add_command(label="Open (Cmd + O)", command=self.SelectFile)
-            self.master.bind("<Command-o>", self.SelectFile)
-        elif platform.system() == "Windows":
-            fileMenu.add_command(label="Open (Ctrl + O)", command=self.SelectFile)
-            self.master.bind("<Control-o>", self.SelectFile)
-        
-        # Play menu
-        if platform.system() == "Darwin":
-            playMenu.add_command(label="Play (Cmd + P)", command=self.Play)
-            self.master.bind("<Command-p>", self.Play)
-        elif platform.system() == "Windows":
-            playMenu.add_command(label="Play (Ctrl + P)", command=self.Play)
-            self.master.bind("<Control-p>", self.Play)
-        
-        if platform.system() == "Darwin":
-            playMenu.add_command(label="Pause (Cmd + Shift + P)", command=self.Pause)
-            self.master.bind("<Command-P>", self.Pause)
-        elif platform.system() == "Windows":
-            playMenu.add_command(label="Pause (Ctrl + Shift + P)", command=self.Pause)
-            self.master.bind("<Control-P>", self.Pause)
-        
-        # Spectrogram menu
-        if platform.system() == "Darwin":
-            spectrogramMenu.add_command(label="Label Spectrogram (Cmd + L)", command=self.fftInspector.AddToCurrentLabelGroup)
-            self.master.bind("<Command-l>", self.fftInspector.AddToCurrentLabelGroup)
-        elif platform.system() == "Windows":
-            spectrogramMenu.add_command(label="Label Spectrogram (Ctrl + L)", command=self.fftInspector.AddToCurrentLabelGroup)
-            self.master.bind("<Control-l>", self.fftInspector.AddToCurrentLabelGroup)
-        
-        self.menuBar.add_cascade(label="File", menu=fileMenu)
-        self.menuBar.add_cascade(label="Play", menu=playMenu)
-        self.menuBar.add_cascade(label="Spectrogram", menu=spectrogramMenu)
 
     def DrawTopFrame(self):
         """
@@ -225,6 +187,57 @@ class App(tk.Frame):
         statusBar = ttk.Label(self.bottomFrame, textvariable=self.status)
         statusBar.pack(side=BOTTOM, anchor=W)
 
+    def MenuBar(self):
+        """
+        Method to create the menu bar
+        """
+        self.menuBar = tk.Menu(self.master)
+        fileMenu = tk.Menu(self.menuBar, tearoff=0)
+        playMenu = tk.Menu(self.menuBar, tearoff=0)
+        spectrogramMenu = tk.Menu(self.menuBar, tearoff=0)
+        
+        # File menu
+        if platform.system() == "Darwin":
+            fileMenu.add_command(label="Open (Cmd + O)", command=self.SelectFile)
+            self.master.bind("<Command-o>", self.SelectFile)
+        elif platform.system() == "Windows":
+            fileMenu.add_command(label="Open (Ctrl + O)", command=self.SelectFile)
+            self.master.bind("<Control-o>", self.SelectFile)
+        
+        if platform.system() == "Darwin":
+            fileMenu.add_checkbutton(label="Save Label File (Cmd + S)", command=self.dataSetLabelInspector.SaveLabels)
+            self.master.bind("<Command-s>", self.dataSetLabelInspector.SaveLabels)
+        elif platform.system() == "Windows":
+            fileMenu.add_checkbutton(label="Save Label File (Ctrl + S)", command=self.dataSetLabelInspector.SaveLabels)
+            self.master.bind("<Control-s>", self.dataSetLabelInspector.SaveLabels)
+        
+        # Play menu
+        if platform.system() == "Darwin":
+            playMenu.add_command(label="Play (Cmd + P)", command=self.Play)
+            self.master.bind("<Command-p>", self.Play)
+        elif platform.system() == "Windows":
+            playMenu.add_command(label="Play (Ctrl + P)", command=self.Play)
+            self.master.bind("<Control-p>", self.Play)
+        
+        if platform.system() == "Darwin":
+            playMenu.add_command(label="Pause (Cmd + Shift + P)", command=self.Pause)
+            self.master.bind("<Command-P>", self.Pause)
+        elif platform.system() == "Windows":
+            playMenu.add_command(label="Pause (Ctrl + Shift + P)", command=self.Pause)
+            self.master.bind("<Control-P>", self.Pause)
+        
+        # Spectrogram menu
+        if platform.system() == "Darwin":
+            spectrogramMenu.add_command(label="Label Spectrogram (Cmd + L)", command=self.fftInspector.AddToCurrentLabelGroup)
+            self.master.bind("<Command-l>", self.fftInspector.AddToCurrentLabelGroup)
+        elif platform.system() == "Windows":
+            spectrogramMenu.add_command(label="Label Spectrogram (Ctrl + L)", command=self.fftInspector.AddToCurrentLabelGroup)
+            self.master.bind("<Control-l>", self.fftInspector.AddToCurrentLabelGroup)
+        
+        self.menuBar.add_cascade(label="File", menu=fileMenu)
+        self.menuBar.add_cascade(label="Play", menu=playMenu)
+        self.menuBar.add_cascade(label="Spectrogram", menu=spectrogramMenu)
+        
 
     def SelectFile(self, event=None):
         # Get current working directory

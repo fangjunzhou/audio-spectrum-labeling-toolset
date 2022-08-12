@@ -1,6 +1,9 @@
+import json
+import os
 from tkinter import *
 import tkinter as tk
 from tkinter import ttk, messagebox
+from tkinter import filedialog
 
 from Utils.DataSetLabel import DataSetLabel
 from Utils.AudioPlot import AudioSpectrumPlot
@@ -194,7 +197,7 @@ class DataSetLabelsInspector(tk.Frame):
         for label in currLabelTexts:
             self.currGroupLabels.insert(tk.END, label)
     
-    def OnLabelSelected(self, event) -> None:
+    def OnLabelSelected(self, event=None) -> None:
         """
         Select a label.
         """
@@ -241,3 +244,31 @@ class DataSetLabelsInspector(tk.Frame):
         Update the label highlight.
         """
         self.spectrogramPlot.UpdateHighlightedLabels(self.selectedLabels)
+    
+    def SaveLabels(self, event=None) -> None:
+        """
+        Save the labels to a json file.
+        """
+        # Get the file name
+        fileName = filedialog.asksaveasfilename(
+            title="Save Labels",
+            initialdir=os.getcwd(),
+            initialfile="labels.json",
+            filetypes=(("json files", "*.json"), ("all files", "*.*"))
+        )
+        if fileName == "":
+            return
+        
+        labelGroups = []
+        
+        for group in self.dataSetLabelGroups:
+            labelGroups.append({
+                "groupName": group.groupName,
+                "dataSetLabels": [label.ToDict() for label in group.dataSetLabels]
+            })
+        
+        # Save the labels to the file
+        with open(fileName, "w") as file:
+            json.dump(labelGroups, file, indent=4)
+        
+        print("Labels saved.")
