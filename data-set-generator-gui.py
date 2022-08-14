@@ -1,3 +1,4 @@
+import copy
 from curses.panel import bottom_panel
 import os
 import platform
@@ -16,7 +17,7 @@ from tkinter import ttk
 from tkinter import filedialog
 
 import numpy as np
-from Config import FIG_DPI
+from Config import FIG_DPI, MAX_AUDIO_LENGTH
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
@@ -32,7 +33,11 @@ class App(ttk.Frame):
 
         # =====INITIALIZE=====
 
-        # Main audio object
+        # Root audio object.
+        self.rootAudio: Audio = Audio()
+        # Audio offset for the play window.
+        self.currOffset = 0
+        # Main audio and player.
         self.mainAudio: Audio = Audio()
         self.mainAudioPlayer: AudioPlayer = None
 
@@ -112,6 +117,23 @@ class App(ttk.Frame):
         """
         Method to draw the main frame
         """
+        # Audio offset
+        self.offsetFrame = tk.Frame(self)
+        self.offsetFrame.pack(side=tk.TOP, fill=tk.X)
+        
+        # Offset value
+        self.offsetValue = tk.StringVar()
+        self.offsetValue.set("0")
+        self.offSetEntry = ttk.Entry(
+            self.offsetFrame, textvariable=self.offsetValue, width=10,
+        )
+        self.offSetEntry.pack(side=tk.LEFT, fill=X, expand=True)
+        # Go to offset button
+        self.goToOffsetButton = ttk.Button(
+            self.offsetFrame, text="Go to offset", command=self.LoadAudioOffset
+        )
+        self.goToOffsetButton.pack(side=tk.LEFT)
+        
         # Audio progress bar
         self.audioProgressBar = ttk.Scale(
             self, from_=0, to=1, orient=tk.HORIZONTAL,
@@ -285,14 +307,68 @@ class App(ttk.Frame):
             return
         
         # Set the status to loading
-        self.status.set("Status: Loading")
+        self.status.set("Status: Loading...")
 
         # Load audio file
-        self.mainAudio.LoadAudio(selectedFileName)
+        self.rootAudio.LoadAudio(selectedFileName)
         print("Loaded audio file")
-        print("Audio length (s): " + str(self.mainAudio.audioLength))
-        print("Audio length (frame): " + str(len(self.mainAudio.audioArray)))
-        print("Audio sample rate: " + str(self.mainAudio.sampleRate))
+        print("Audio length (s): " + str(self.rootAudio.audioLength))
+        print("Audio length (frame): " + str(len(self.rootAudio.audioArray)))
+        print("Audio sample rate: " + str(self.rootAudio.sampleRate))
+        
+        # TODO: Get current offset.
+        self.currOffset = 0
+        self.LoadAudioOffsetThread()
+
+        # Set the status to ready
+        self.status.set("Status: Ready")
+    
+    def LoadAudioOffset(self):
+        # Pause the audio
+        self.Pause()
+        
+        # Start a thread to load the audio offset
+        loadAudioOffsetThread = threading.Thread(target=self.LoadAudioOffsetThread)
+        loadAudioOffsetThread.start()
+    
+    def LoadAudioOffsetThread(self):
+        # If root audio is not loaded, return
+        if self.rootAudio.audioArray is None:
+            messagebox.showerror("Error", "No audio file loaded")
+            return
+        
+        # Set the status to loading
+        self.status.set("Status: Slicing audio...")
+        
+        # Get offsetValue
+        try:
+            self.currOffset = float(self.offsetValue.get())
+        except ValueError:
+            messagebox.showerror("Error", "Offset value is not a number")
+            # Set the status to ready
+            self.status.set("Status: Ready")
+            return
+        # Get current audio frame
+        offsetFrame = int(self.currOffset * self.rootAudio.sampleRate)
+        # Min offsetFrame is 0
+        if offsetFrame < 0:
+            offsetFrame = 0
+        # Max offsetFrame is the length of the audio file
+        if offsetFrame >= len(self.rootAudio.audioArray):
+            offsetFrame = len(self.rootAudio.audioArray)-1
+        self.currOffset = offsetFrame / self.rootAudio.sampleRate
+        # Set the offset value in the label
+        self.offsetValue.set(self.currOffset)
+        # frames in the window
+        windowFrame = MAX_AUDIO_LENGTH * self.rootAudio.sampleRate
+        # Get current window frames
+        if offsetFrame + windowFrame > len(self.rootAudio.audioArray):
+            windowFrame = len(self.rootAudio.audioArray) - offsetFrame
+        # Load main audio with offset
+        self.mainAudio.LoadAudioArray(
+            self.rootAudio.audioArray[offsetFrame:offsetFrame+windowFrame],
+            self.rootAudio.sampleRate
+        )
         
         # Set up audio player
         self.mainAudioPlayer = AudioPlayer(
@@ -304,7 +380,7 @@ class App(ttk.Frame):
         # Plot audio file
         self.audioMagnitudePlot.Plot()
         self.audioSpectrumPlot.Plot(keepLim=False)
-
+        
         # Set the status to ready
         self.status.set("Status: Ready")
 
@@ -389,6 +465,12 @@ class App(ttk.Frame):
         xSpan = (int(startCoord[0]), int(endCoord[0]))
         # Sort the x coord span
         xSpan = sorted(xSpan)
+        
+        # Check if xSpan is out of bounds
+        if xSpan[0] < 0 or xSpan[1] > self.mainAudio.fftSpectrum.shape[0]:
+            print("Invalid coordinates")
+            return
+        
         # Construct y coord span
         ySpan = (int(startCoord[1]), int(endCoord[1]))
         ySpan = sorted(ySpan)
@@ -431,8 +513,8 @@ class App(ttk.Frame):
         self.dataSetLabelInspector.selectedGroup.AddDataSetLabel(
             DataSetLabel(
                 self.dataSetLabelInspector.selectedGroup.groupName,
-                self.fftInspector.startTime,
-                self.fftInspector.endTime,
+                self.fftInspector.startTime + self.currOffset,
+                self.fftInspector.endTime + self.currOffset,
                 self.fftInspector.startFreq,
                 self.fftInspector.endFreq
             )
@@ -445,17 +527,24 @@ class App(ttk.Frame):
         """
         Method to update the label highlight
         """
+        # Deep copy the selected labels
+        selectedLabelsOffset = [
+            selectedLabel.OffsetCopy(0-self.currOffset) for selectedLabel in selectedLabels
+        ]
+        
+        self.audioSpectrumPlot.UpdateHighlightedLabels(selectedLabelsOffset)
+        
         # Check if the selected label is valid
-        if selectedLabels is None or len(selectedLabels) == 0:
+        if selectedLabelsOffset is None or len(selectedLabels) == 0:
             return
         
         # Check if the length of the selected label > 1
-        if len(selectedLabels) > 1:
+        if len(selectedLabelsOffset) > 1:
             print("Multiple labels selected")
             return
         
         # Get the start and end time and frequency
-        currLabel = selectedLabels[0]
+        currLabel = selectedLabelsOffset[0]
         freqArr = librosa.fft_frequencies(sr=self.mainAudio.sampleRate, n_fft=self.mainAudio.fftSpectrum.shape[1])
 
         # Get the start and end of x

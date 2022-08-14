@@ -245,7 +245,6 @@ class DataSetLabelsInspector(tk.Frame):
         """
         Update the label highlight.
         """
-        self.spectrogramPlot.UpdateHighlightedLabels(self.selectedLabels)
         # Call the update function to update the highlighted labels
         if self.onUpdateLabelHighlight is not None:
             self.onUpdateLabelHighlight(self.selectedLabels)

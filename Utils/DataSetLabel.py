@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class DataSetLabel:
     """
     Data set label instance.
@@ -17,6 +19,15 @@ class DataSetLabel:
         self.endTime: float = endTime
         self.startFreq: float = startFreq
         self.endFreq: float = endFreq
+    
+    def OffsetCopy(self, offset: float) -> DataSetLabel:
+        return DataSetLabel(
+            self.groupName,
+            self.startTime + offset,
+            self.endTime + offset,
+            self.startFreq,
+            self.endFreq,
+        )
     
     def __str__(self) -> str:
         return "{0:.2f}s->{1:.2f}s:{2:.2f}Hz->{3:.2f}Hz".format(

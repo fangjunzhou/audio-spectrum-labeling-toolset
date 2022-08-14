@@ -46,6 +46,17 @@ class Audio:
         # Generate FFT Spectrum
         self.fftSpectrum = np.abs(librosa.core.spectrum.stft(self.audioArray))
     
+    def LoadAudioArray(self, audioArray: np.ndarray, sampleRate: int):
+        """
+        Load audio array.
+        """
+        self.audioArray = audioArray
+        self.sampleRate = sampleRate
+        self.audioLength = len(self.audioArray) / self.sampleRate
+        
+        # Generate FFT Spectrum
+        self.fftSpectrum = np.abs(librosa.core.spectrum.stft(self.audioArray))
+    
     def ReconstructAudio(
         self,
         sampleRate: int,
