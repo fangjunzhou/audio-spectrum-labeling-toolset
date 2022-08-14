@@ -1,11 +1,13 @@
 from curses.panel import bottom_panel
 import os
 import platform
+from tkinter import messagebox
 import librosa
 import threading
 from time import sleep, time
 from timeit import timeit
 from matplotlib import pyplot as plt
+from matplotlib.backend_bases import key_press_handler
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 import tkinter as tk
@@ -18,6 +20,7 @@ from Config import FIG_DPI
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
+from Utils.DataSetLabel import DataSetLabel
 from Utils.DataSetLabelInspector import DataSetLabelsInspector
 from Utils.FFTInspector import FFTDetailInspector
 
@@ -48,6 +51,7 @@ class App(ttk.Frame):
         self.fftFig.set_dpi(FIG_DPI)
         self.fftFig.tight_layout()
         self.fftCanvas = FigureCanvasTkAgg(self.fftFig, self)
+        self.fftCanvas.mpl_connect("key_press_event", self.OnKeyPressed)
         # Audio plot
         self.audioMagnitudePlot = AudioMagnitudePlot(
             self.mainAudio, self.magAx, self.magCanvas)
@@ -109,6 +113,12 @@ class App(ttk.Frame):
         """
         Method to draw the main frame
         """
+        toolBarFrame = tk.Frame(self)
+        toolBarFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        
+        self.fftToolbar = NavigationToolbar2Tk(self.fftCanvas, toolBarFrame)
+        self.fftToolbar.update()
+        
         self.magCanvas.draw()
         self.magCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
         self.fftCanvas.draw()
@@ -157,6 +167,7 @@ class App(ttk.Frame):
         # Data set label groups
         self.dataSetLabelInspector = DataSetLabelsInspector(
             self.audioSpectrumPlot,
+            onUpdateLabelHighlight=self.UpdateLabelHighlight,
             master=self.leftFrame
         )
         self.dataSetLabelInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -167,7 +178,7 @@ class App(ttk.Frame):
         """
         
         self.fftInspector = FFTDetailInspector(
-            self.dataSetLabelInspector,
+            onAddToCurrLabelGroup=self.AddToCurrLabelGroup,
             master=self.rightFrame
         )
         self.fftInspector.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -232,11 +243,11 @@ class App(ttk.Frame):
         
         # Spectrogram menu
         if platform.system() == "Darwin":
-            spectrogramMenu.add_command(label="Label Spectrogram (Cmd + L)", command=self.fftInspector.AddToCurrentLabelGroup)
-            self.master.bind("<Command-l>", self.fftInspector.AddToCurrentLabelGroup)
+            spectrogramMenu.add_command(label="Label Spectrogram (Cmd + L)", command=self.AddToCurrLabelGroup)
+            self.master.bind("<Command-l>", self.AddToCurrLabelGroup)
         elif platform.system() == "Windows":
-            spectrogramMenu.add_command(label="Label Spectrogram (Ctrl + L)", command=self.fftInspector.AddToCurrentLabelGroup)
-            self.master.bind("<Control-l>", self.fftInspector.AddToCurrentLabelGroup)
+            spectrogramMenu.add_command(label="Label Spectrogram (Ctrl + L)", command=self.AddToCurrLabelGroup)
+            self.master.bind("<Control-l>", self.AddToCurrLabelGroup)
         
         self.menuBar.add_cascade(label="File", menu=fileMenu)
         self.menuBar.add_cascade(label="Play", menu=playMenu)
@@ -388,7 +399,60 @@ class App(ttk.Frame):
         )
         
         self.fftInspector.fftDetailAudioPlayer.Play()
-            
+    
+    def AddToCurrLabelGroup(self, event=None):
+        # Check current selected group is not None
+        if self.dataSetLabelInspector.selectedGroup is None:
+            messagebox.showerror("Error", "No group selected")
+            return
+        
+        # Add the fft detail to the current label group
+        self.dataSetLabelInspector.selectedGroup.AddDataSetLabel(
+            DataSetLabel(
+                self.dataSetLabelInspector.selectedGroup.groupName,
+                self.fftInspector.startTime,
+                self.fftInspector.endTime,
+                self.fftInspector.startFreq,
+                self.fftInspector.endFreq
+            )
+        )
+        
+        # Update the label inspector
+        self.dataSetLabelInspector.UpdateGroupLabels()
+    
+    def UpdateLabelHighlight(self, selectedLabels: list[DataSetLabel]):
+        """
+        Method to update the label highlight
+        """
+        # Check if the selected label is valid
+        if selectedLabels is None or len(selectedLabels) == 0:
+            return
+        
+        # Check if the length of the selected label > 1
+        if len(selectedLabels) > 1:
+            print("Multiple labels selected")
+            return
+        
+        # Get the start and end time and frequency
+        currLabel = selectedLabels[0]
+        freqArr = librosa.fft_frequencies(sr=self.mainAudio.sampleRate, n_fft=self.mainAudio.fftSpectrum.shape[1])
+
+        # Get the start and end of x
+        xStart = currLabel.startTime / self.mainAudio.audioLength * self.mainAudio.fftSpectrum.shape[1]
+        xEnd = currLabel.endTime / self.mainAudio.audioLength * self.mainAudio.fftSpectrum.shape[1]
+        # Get the first frequency index in freqArr >= label.startFreq
+        yStart = np.argmax(freqArr >= currLabel.startFreq)
+        yEnd = np.argmax(freqArr >= currLabel.endFreq)
+        
+        # Update the fft detail inspector
+        self.SpectrumSelected((xStart, yStart), (xEnd, yEnd))
+    
+    def OnKeyPressed(self, event):
+        print("you pressed {}".format(event.key))
+        # Home key
+        if event.key == "h":
+            key_press_handler(event, self.fftCanvas, self.fftToolbar)
+    
     def OnClose(self):
         """
         Method to exit the program

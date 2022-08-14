@@ -34,10 +34,10 @@ class FFTDetailInspector(tk.Frame):
     """
     Inspector to browse FFT Detials.
     """
-    def __init__(self, labelInspector: DataSetLabelsInspector, master = None) -> None:
+    def __init__(self, onAddToCurrLabelGroup: callable, master = None) -> None:
         super().__init__(master)
         
-        self.labelInspector = labelInspector
+        self.onAddToCurrLabelGroup = onAddToCurrLabelGroup
         
         # FFT detail view
         self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
@@ -116,7 +116,7 @@ class FFTDetailInspector(tk.Frame):
         
         # Add to current label group
         addToCurrentLabelGroupButton = ttk.Button(
-            rightFrameScrollable, text="Add to Current Label Group", command=self.AddToCurrentLabelGroup)
+            rightFrameScrollable, text="Add to Current Label Group", command=self.onAddToCurrLabelGroup)
         addToCurrentLabelGroupButton.pack(side=tk.TOP, fill=X)
     
     def SetFFTDetail(self, startTime, endTime, startFreq, endFreq):
@@ -141,26 +141,3 @@ class FFTDetailInspector(tk.Frame):
         
         # Play the audio file
         self.fftDetailAudioPlayer.Play()
-        
-    def AddToCurrentLabelGroup(self, event=None):
-        """
-        Add the fft detail to the current label group
-        """
-        # Check current selected group is not None
-        if self.labelInspector.selectedGroup is None:
-            messagebox.showerror("Error", "No group selected")
-            return
-        
-        # Add the fft detail to the current label group
-        self.labelInspector.selectedGroup.AddDataSetLabel(
-            DataSetLabel(
-                self.labelInspector.selectedGroup.groupName,
-                self.startTime,
-                self.endTime,
-                self.startFreq,
-                self.endFreq
-            )
-        )
-        
-        # Update the label inspector
-        self.labelInspector.UpdateGroupLabels()

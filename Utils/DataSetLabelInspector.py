@@ -32,6 +32,7 @@ class DataSetLabelsInspector(tk.Frame):
     def __init__(
         self,
         spectrogramPlot: AudioSpectrumPlot,
+        onUpdateLabelHighlight: callable = None,
         master: tk.Frame = None
     ) -> None:
         super().__init__(master)
@@ -43,6 +44,7 @@ class DataSetLabelsInspector(tk.Frame):
         self.selectedLabels: list[DataSetLabel] = []
         
         self.spectrogramPlot = spectrogramPlot
+        self.onUpdateLabelHighlight = onUpdateLabelHighlight
         
         # -----RENDER-----
         # Title
@@ -244,6 +246,9 @@ class DataSetLabelsInspector(tk.Frame):
         Update the label highlight.
         """
         self.spectrogramPlot.UpdateHighlightedLabels(self.selectedLabels)
+        # Call the update function to update the highlighted labels
+        if self.onUpdateLabelHighlight is not None:
+            self.onUpdateLabelHighlight(self.selectedLabels)
     
     def SaveLabels(self, event=None) -> None:
         """
