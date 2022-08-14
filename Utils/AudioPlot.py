@@ -158,7 +158,7 @@ class AudioSpectrumPlot(AudioPlot):
         # Plot cursor
         self.cursor = Cursor(self.ax, useblit=True, color='white', linewidth=1)
 
-    def Plot(self) -> None:
+    def Plot(self, keepLim: bool = True) -> None:
         # Get the audio spectrum
         audioSpectrum = self.audio.fftSpectrum
 
@@ -174,6 +174,10 @@ class AudioSpectrumPlot(AudioPlot):
         
         # Enhance the brightness of the spectrum
         audioSpectrum = audioSpectrum + self.brightnessEnhancement
+        
+        # Store the x and y limits of the plot
+        xLim = self.ax.get_xlim()
+        yLim = self.ax.get_ylim()
 
         # Clear the axes
         self.ax.cla()
@@ -224,6 +228,11 @@ class AudioSpectrumPlot(AudioPlot):
                     linewidth=2
                 )
             )
+        
+        # Restore the x and y limits of the plot
+        if keepLim:
+            self.ax.set_xlim(xLim)
+            self.ax.set_ylim(yLim)
 
         # Update the canvas
         self.canvas.draw()

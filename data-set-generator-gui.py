@@ -51,7 +51,6 @@ class App(ttk.Frame):
         self.fftFig.set_dpi(FIG_DPI)
         self.fftFig.tight_layout()
         self.fftCanvas = FigureCanvasTkAgg(self.fftFig, self)
-        self.fftCanvas.mpl_connect("key_press_event", self.OnKeyPressed)
         # Audio plot
         self.audioMagnitudePlot = AudioMagnitudePlot(
             self.mainAudio, self.magAx, self.magCanvas)
@@ -113,6 +112,13 @@ class App(ttk.Frame):
         """
         Method to draw the main frame
         """
+        # Audio progress bar
+        self.audioProgressBar = ttk.Scale(
+            self, from_=0, to=1, orient=tk.HORIZONTAL,
+            command=self.SetAudioPosition
+        )
+        self.audioProgressBar.pack(side=tk.BOTTOM, fill=tk.X)
+        
         toolBarFrame = tk.Frame(self)
         toolBarFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         
@@ -266,10 +272,10 @@ class App(ttk.Frame):
         self.openFileName.set(selectedFileName)
 
         # Run the helper method to load the file
-        loadFileThread = threading.Thread(target=self.SelectFileHelper, args=(selectedFileName,))
+        loadFileThread = threading.Thread(target=self.SelectFileThread, args=(selectedFileName,))
         loadFileThread.start()
 
-    def SelectFileHelper(self, selectedFileName):
+    def SelectFileThread(self, selectedFileName):
         """
         Helper method to select a file
         """
@@ -297,7 +303,7 @@ class App(ttk.Frame):
         
         # Plot audio file
         self.audioMagnitudePlot.Plot()
-        self.audioSpectrumPlot.Plot()
+        self.audioSpectrumPlot.Plot(keepLim=False)
 
         # Set the status to ready
         self.status.set("Status: Ready")
@@ -343,11 +349,26 @@ class App(ttk.Frame):
         # Pause the audio file
         self.mainAudioPlayer.Pause()
     
+    def SetAudioPosition(self, value):
+        """
+        Set the audio position
+        """
+        if self.mainAudioPlayer is None:
+            return
+        
+        # Set the audio position only if not playing
+        if not self.mainAudioPlayer.isPlaying:
+            # Set the audio position
+            self.mainAudioPlayer.SetAudioPosition(float(value))
+            # Update the audio cursor
+            self.audioMagnitudePlot.SetCursorPosition(float(value) * self.mainAudio.audioLength)
+    
     def UpdateAudioCursor(self, value):
         """
         Method to update the audio cursor
         """
         self.audioMagnitudePlot.SetCursorPosition(value)
+        self.audioProgressBar.set(value/self.mainAudio.audioLength)
     
     def SpectrumSelected(self, startCoord: tuple[float, float], endCoord: tuple[float, float]):
         """
@@ -446,12 +467,6 @@ class App(ttk.Frame):
         
         # Update the fft detail inspector
         self.SpectrumSelected((xStart, yStart), (xEnd, yEnd))
-    
-    def OnKeyPressed(self, event):
-        print("you pressed {}".format(event.key))
-        # Home key
-        if event.key == "h":
-            key_press_handler(event, self.fftCanvas, self.fftToolbar)
     
     def OnClose(self):
         """

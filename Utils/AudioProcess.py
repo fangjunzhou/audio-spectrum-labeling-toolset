@@ -93,6 +93,11 @@ class AudioPlayer:
         self.isPlaying: bool = False
         
         self.timeCallback: callable = callback
+    
+    def SetAudioPosition(self, position: float) -> None:
+        # Set the audio position
+        position = position * self.audio.audioLength
+        self.audio.cursorPosition = position
         
     def Play(self) -> None:
         """
