@@ -14,13 +14,14 @@ from tkinter import ttk
 from tkinter import filedialog
 
 import numpy as np
+from Config import FIG_DPI
 
 from Utils.AudioPlot import AudioMagnitudePlot, AudioSpectrumPlot
 from Utils.AudioProcess import Audio, AudioPlayer
 from Utils.DataSetLabelInspector import DataSetLabelsInspector
 from Utils.FFTInspector import FFTDetailInspector
 
-class App(tk.Frame):
+class App(ttk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.pack(fill=BOTH, expand=True)
@@ -40,9 +41,11 @@ class App(tk.Frame):
         # Matplotlib figure
         self.magFig, self.magAx = plt.subplots()
         self.magFig.set_figheight(2)
+        self.magFig.set_dpi(FIG_DPI)
         self.magFig.tight_layout()
         self.magCanvas = FigureCanvasTkAgg(self.magFig, self)
         self.fftFig, self.fftAx = plt.subplots()
+        self.fftFig.set_dpi(FIG_DPI)
         self.fftFig.tight_layout()
         self.fftCanvas = FigureCanvasTkAgg(self.fftFig, self)
         # Audio plot
@@ -54,6 +57,7 @@ class App(tk.Frame):
         # FFT contrast control
         self.fftContrastCurveFig, self.fftContrastCurveAx = plt.subplots()
         self.fftContrastCurveFig.set_size_inches(3, 2)
+        self.fftContrastCurveFig.set_dpi(FIG_DPI)
         self.fftContrastCurveFig.tight_layout()
 
         # =====FRAMES=====

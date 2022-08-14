@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from matplotlib import pyplot as plt
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from Config import FIG_DPI
 
 from Utils.AudioProcess import Audio, AudioPlayer
 from Utils.DataSetLabelInspector import DataSetLabel, DataSetLabelsInspector
@@ -41,6 +42,7 @@ class FFTDetailInspector(tk.Frame):
         # FFT detail view
         self.fftDetailViewFig, self.fftDetailViewAx = plt.subplots()
         self.fftDetailViewFig.set_size_inches(4, 3)
+        self.fftDetailViewFig.set_dpi(FIG_DPI)
         self.fftDetailViewFig.tight_layout()
         # FFT detail audio
         self.fftDetailAudio: Audio = Audio()
