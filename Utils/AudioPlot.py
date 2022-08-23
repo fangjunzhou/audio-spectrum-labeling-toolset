@@ -22,6 +22,7 @@ class AudioPlot:
                  ax: plt.Axes,
                  canvas: FigureCanvasTkAgg,
                  onRelease: callable = None,
+                 startTimeOffset: float = 0
                  ) -> None:
         # Constants
         self.X_TICK_NUMBER = 10
@@ -42,6 +43,9 @@ class AudioPlot:
         self.onRelease = onRelease
         self.pressCoord: tuple(float, float) = None
         self.releaseCoord: tuple(float, float) = None
+
+        # Start time offset
+        self.startTimeOffset: float = startTimeOffset
 
     def Plot(self) -> None:
         """
@@ -122,8 +126,10 @@ class AudioMagnitudePlot(AudioPlot):
         self.ax.set_xticks(sampleIndeces)
         tickLabels = [
             (
-                "{:.2f}".format(self.audio.audioLength *
-                                i / len(compressedAudioArray))
+                "{:.2f}".format(
+                    self.audio.audioLength * i / len(compressedAudioArray) +
+                    self.startTimeOffset
+                )
             ) for i in sampleIndeces]
         self.ax.set_xticklabels(tickLabels)
         # Set the x-axis label
@@ -193,8 +199,10 @@ class AudioSpectrumPlot(AudioPlot):
             0, audioSpectrum.shape[1], audioSpectrum.shape[1] // self.X_TICK_NUMBER))
         self.ax.set_xticklabels(
             [
-                "{:.2f}".format(self.audio.audioLength *
-                                i / audioSpectrum.shape[1])
+                "{:.2f}".format(
+                    self.audio.audioLength * i / audioSpectrum.shape[1] +
+                    self.startTimeOffset
+                )
                 for i in np.arange(
                     0,
                     audioSpectrum.shape[1],

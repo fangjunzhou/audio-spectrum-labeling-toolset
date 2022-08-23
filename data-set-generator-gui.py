@@ -391,6 +391,10 @@ class App(ttk.Frame):
             self.UpdateAudioCursor
         )
 
+        # Update plot start time offset
+        self.audioMagnitudePlot.startTimeOffset = self.currOffset
+        self.audioSpectrumPlot.startTimeOffset = self.currOffset
+
         # Plot audio file
         self.audioMagnitudePlot.Plot()
         self.audioSpectrumPlot.Plot(keepLim=False)
