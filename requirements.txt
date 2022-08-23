@@ -11,4 +11,5 @@ librosa
 
 # Sound processing
 soundfile
+sounddevice
 pydub
