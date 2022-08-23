@@ -18,7 +18,7 @@ print(f"Found {len(mp3Files)} mp3 files")
 for file in mp3Files:
     print(f"Converting {file} to wav...")
     # Read mp3 file
-    audio = AudioSegment.from_mp3(file)
+    audio = AudioSegment.from_mp3(os.path.join(os.getcwd(), file))
     # Write wav file
     audio.export(file.replace(".mp3", ".wav"), format="wav")
     # Remove mp3 file
