@@ -7,6 +7,7 @@ import scipy
 import soundfile as sf
 import numpy as np
 import sounddevice as sd
+from tkinter import messagebox
 
 
 class Audio:
@@ -36,15 +37,25 @@ class Audio:
         if audioFilePath is not None:
             self.LoadAudio(audioFilePath)
 
-    def LoadAudio(self, audioFilePath: str, channel: int = 0) -> None:
+    def LoadAudio(self, audioFilePath: str) -> None:
         """
         Method to load a audio file.
         """
         # Load audio file
         self.audioArray, self.sampleRate = sf.read(
-            audioFilePath, always_2d=False)
-        # Get the target channel
-        self.audioArray = self.audioArray[:, channel]
+            audioFilePath, always_2d=True)
+
+        # Check if the audio has multiple channels
+        if self.audioArray.shape[1] > 1:
+            # Display error message
+            messagebox.showerror(
+                "Error", "Audio has multiple channels. Please select a mono audio file.")
+            # Exit the program
+            exit()
+
+        # Get first channel
+        self.audioArray = self.audioArray[:, 0]
+
         # get the length of the audio file
         self.audioLength = len(self.audioArray) / self.sampleRate
 
